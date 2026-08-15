@@ -2,6 +2,10 @@
 
 Entries are append-only decisions. A superseding entry wins; older entries remain historical context.
 
+## 2026-08-15 - IA v1 uses Today, Health, Move, and You
+
+**Supersedes the Coach top-level destination.** Today owns the whole daily story and its evidence-backed next step. Health owns body evidence over time. Move owns movement/activity. You owns goals, explicit context, reflection, privacy, and account control. Coaching remains contextual product behavior; a future conversation may open from an insight or goal but does not receive a primary tab by default. The Android code still says `Coach` until the IA implementation slice changes it.
+
 ## 2026-08-15 - WholeMate product constitution
 
 WholeMate helps a person understand how they are today, what is shaping that state, and what they can do next. Health data is evidence, not the product. Every primary experience must answer at least one of those questions and participate in the daily loop `Observe -> Understand -> Decide -> Act -> Reflect -> Learn`.

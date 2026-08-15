@@ -61,7 +61,7 @@ The selected signals may change as goals, evidence, and approved models evolve�
 
 ## Goals and health domains
 
-A goal includes user intent, desired outcome, time horizon, supporting measured evidence, explicit context, confidence/data sufficiency, accepted actions, and reflection. Goals prioritize the Body Picture and Coach; they never alter measured records.
+A goal includes user intent, desired outcome, time horizon, supporting measured evidence, explicit context, confidence/data sufficiency, accepted actions, and reflection. Goals prioritize the Body Picture, Today guidance, and You context; they never alter measured records.
 
 Health domains are a capability map, not a dashboard menu or delivery roadmap. Sleep, cardiovascular, respiratory, movement, recovery, mind/stress, habits, and nutrition enter the product only when they improve a user decision.
 
@@ -94,7 +94,9 @@ Gemini may connect evidence, summarize change, ask a useful question, and person
 - **Today — What matters today?** A short Body Picture and the most relevant next understanding or action.
 - **Health — What is happening in my body over time?** Evidence, trends, provenance, and data quality.
 - **Move — How am I moving and training?** Activity and training as one health domain.
-- **Coach — What does this mean for me and what could I do?** The interpretation/action layer, not merely an AI chat tab.
+- **You — What matters for me?** Goals, explicit context, reflection, privacy, and personal control.
+
+Interpretation and action are product behavior rather than a permanent Coach destination: daily guidance belongs on Today, deeper explanation opens from its evidence, and future conversation is launched contextually from an insight or goal.
 
 ## Mental health and stress boundary
 

@@ -21,6 +21,7 @@ The product loop is `Observe → Understand → Decide → Act → Reflect → L
 ## Canonical contracts
 
 - [Product constitution](docs/PRODUCT_CONCEPT.md)
+- [Information architecture v1](docs/IA_V1.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Decision log](docs/DECISION_LOG.md)

@@ -24,7 +24,8 @@ Missing stays missing. AI is optional to comprehension. Health-provider reads re
 - [x] Health Connect permission/read flow for Sleep, HR, HRV RMSSD, respiratory rate, steps, and activity.
 - [x] Explicit loading, permission, unavailable, empty, partial, and error presentation.
 - [x] Google OAuth PKCE, Android Keystore-backed session restore/refresh/logout, owner profile, and read-only history.
-- [x] Today, Health, Move, and Coach navigation on one visual system.
+- [x] Current Android implementation has Today, Health, Move, and Coach navigation on one visual system.
+- [x] IA v1 target is locked as Today, Health, Move, and You; code migration remains pending.
 - [x] Initial Recovery, Strain, and Sleep hero without fabricated unavailable scores.
 - [x] Deterministic personal baselines with missing-data rules.
 - [x] Firebase App Distribution and Samsung tester flow.
@@ -85,6 +86,18 @@ Acceptance:
 - Today remains useful with Gemini disabled and with partial provider data.
 - Every visible claim traces to a measured fact, tested calculation, or explicit user report.
 - Samsung QA covers fresh, stale, partial, empty, revoked-permission, offline, and error states.
+
+## IA/UI implementation sequence
+
+The canonical inventory and rough wireframes live in `IA_V1.md`.
+
+1. Implement the four-destination Web design lab shell: Today, Health, Move, You.
+2. Stabilize Today hierarchy before detailed visual polish.
+3. Implement Health, Move, and You hierarchy with deterministic demo states.
+4. Map existing shared models only after screen ownership is stable.
+5. Port the locked hierarchy to Android and validate behavior/device constraints.
+
+Do not add shared architecture, a fifth tab, provider-driven features, or a generic AI conversation surface during this sequence.
 
 ## Milestone 4 — First complete Daily Loop
 
@@ -161,4 +174,4 @@ An iOS client is enabled work when justified, not forbidden work and not a claim
 
 ## Next executable slice
 
-Extract the provider-neutral health facts, Body Picture policy/model, personal baselines, and their tests into a real Kotlin Multiplatform shared source set. Keep Health Connect mapping and Android presentation/lifecycle code in the Android host.
+Implement the four-destination shell in the Web design lab using the IA v1 hierarchy: Today, Health, Move, and You. Start with deterministic demo states and rough interaction structure; do not add visual polish, shared architecture, provider capabilities, or recovery changes in this slice.
