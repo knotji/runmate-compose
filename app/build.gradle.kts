@@ -10,6 +10,15 @@ val nativeHealthDashboardEnabled = providers.gradleProperty("nativeHealthDashboa
     .map(String::toBoolean)
     .orElse(false)
 val labVersionCode = providers.gradleProperty("labVersionCode").map(String::toInt).orElse(1)
+val supabaseUrl = providers.gradleProperty("wholeMateSupabaseUrl")
+    .orElse(providers.environmentVariable("WHOLEMATE_SUPABASE_URL"))
+    .orElse("")
+val supabasePublishableKey = providers.gradleProperty("wholeMateSupabasePublishableKey")
+    .orElse(providers.environmentVariable("WHOLEMATE_SUPABASE_PUBLISHABLE_KEY"))
+    .orElse("")
+
+fun quotedBuildConfig(value: String): String =
+    "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "com.runmate.compose"
@@ -23,6 +32,8 @@ android {
         versionName = "0.1.0-poc"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("boolean", "NATIVE_HEALTH_DASHBOARD", nativeHealthDashboardEnabled.get().toString())
+        buildConfigField("String", "SUPABASE_URL", quotedBuildConfig(supabaseUrl.get()))
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", quotedBuildConfig(supabasePublishableKey.get()))
     }
 
     buildTypes {

@@ -26,6 +26,8 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 - [x] Explicit loading, permission, unavailable, empty-value, and error presentation.
 - [x] Mock Recovery, Strain, Energy, training guidance, insights, and charts removed from Today.
 - [x] Firebase App Distribution flow and Samsung tester established.
+- [x] Today, Health, Move, and Coach navigation with honest unavailable states.
+- [x] Supabase public-client configuration and project reachability check without auth or data access.
 - [ ] Physical-device acceptance pass recorded for the real-data Today screen.
 - [x] Sleep and Heart Rate use typed domain models; display formatting is outside the repository.
 

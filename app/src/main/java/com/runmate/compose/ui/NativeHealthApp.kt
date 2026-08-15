@@ -23,6 +23,8 @@ import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
+import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
@@ -67,6 +69,8 @@ import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
 import com.runmate.compose.state.AppDestination
 import com.runmate.compose.state.RunMateAppStore
+import com.runmate.compose.supabase.SupabaseConnectionState
+import com.runmate.compose.supabase.SupabaseConnectionViewModel
 
 private val Ink = Color(0xFF142A46)
 private val Muted = Color(0xFF667A91)
@@ -84,6 +88,7 @@ fun NativeHealthApp(
     experimentEnabled: Boolean,
     viewModel: HealthDashboardViewModel? = null,
     appStore: RunMateAppStore? = null,
+    supabaseViewModel: SupabaseConnectionViewModel? = null,
 ) {
     MaterialTheme {
         if (!experimentEnabled) {
@@ -105,7 +110,9 @@ fun NativeHealthApp(
             Box(Modifier.padding(padding).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> TodayDecisionScreen(viewModel)
-                    else -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
+                    1 -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
+                    2 -> MoveScreen(viewModel)
+                    else -> CoachScreen(supabaseViewModel)
                 }
             }
         }
@@ -114,7 +121,12 @@ fun NativeHealthApp(
 
 @Composable
 private fun LabNavigation(selected: Int, onSelect: (Int) -> Unit) {
-    val items = listOf("Today" to Icons.Rounded.Home, "Health" to Icons.Rounded.Favorite)
+    val items = listOf(
+        "Today" to Icons.Rounded.Home,
+        "Health" to Icons.Rounded.Favorite,
+        "Move" to Icons.AutoMirrored.Rounded.DirectionsWalk,
+        "Coach" to Icons.Rounded.Psychology,
+    )
     NavigationBar(containerColor = Color.White, tonalElevation = 10.dp) {
         items.forEachIndexed { index, item ->
             NavigationBarItem(
@@ -130,6 +142,61 @@ private fun LabNavigation(selected: Int, onSelect: (Int) -> Unit) {
                     unselectedTextColor = Muted,
                 ),
             )
+        }
+    }
+}
+
+@Composable
+private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
+    val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
+    LaunchedEffect(viewModel) { viewModel?.refresh() }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item { Text("Move", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
+        item { Text("Movement is one part of your health, not the whole score.", color = Color(0xFFB8C9C2)) }
+        when (state) {
+            is HealthDashboardUiState.Content -> {
+                item { DarkHealthCard("Steps today", HealthDisplayFormatter.steps(state.data.stepsToday)) }
+                item { DarkHealthCard("Latest activity", HealthDisplayFormatter.activity(state.data.latestActivity)) }
+                item { Button(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.Refresh, null); Text(" Refresh") } }
+            }
+            is HealthDashboardUiState.PermissionRequired -> item { DarkHealthCard("Health access needed", "Grant access from the Health tab to see movement.") }
+            is HealthDashboardUiState.Error -> item { DarkHealthCard("Movement unavailable", state.message) }
+            HealthDashboardUiState.Unavailable -> item { DarkHealthCard("Health Connect", "Unavailable on this device") }
+            else -> item { LoadingState() }
+        }
+    }
+}
+
+@Composable
+private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
+    val state = viewModel?.state?.collectAsStateWithLifecycle()?.value ?: SupabaseConnectionState.NotConfigured
+    LaunchedEffect(viewModel) { viewModel?.checkConnection() }
+    val status = when (state) {
+        SupabaseConnectionState.NotConfigured -> "Local project URL and publishable key are not configured"
+        SupabaseConnectionState.Checking -> "Checking project connection…"
+        SupabaseConnectionState.Connected -> "Project reachable • read/write remain disabled"
+        is SupabaseConnectionState.Failed -> state.message
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item { Text("Coach", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
+        item { Text("Future guidance across body, activity, recovery, and stress.", color = Color(0xFFB8C9C2)) }
+        item { DarkHealthCard("Supabase", status) }
+        item { DarkHealthCard("Account", "Not connected yet") }
+        item { DarkHealthCard("AI guidance", "Unavailable until identity, consent, and evidence rules are approved") }
+        item {
+            Button(
+                onClick = { viewModel?.checkConnection() },
+                enabled = viewModel != null && state != SupabaseConnectionState.Checking,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Check connection") }
         }
     }
 }

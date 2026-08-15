@@ -44,7 +44,8 @@ Dependencies point inward. SDK types stop at repository boundaries.
 
 - `core/state`: reusable load-state semantics.
 - `core/performance`: payload-free timing instrumentation.
-- `state`: app/session navigation state.
+- `state`: four-destination Today, Health, Move, and Coach navigation state.
+- `supabase`: public-client configuration and a read-only project reachability check. It has no auth, table reads, or writes.
 - `health`: typed Sleep, Heart Rate, HRV, Respiratory Rate, and generic Activity models plus direct read-only Health Connect mapping. Display strings are produced outside the repository.
 - `recovery`: versioned cross-client contract; the provider is intentionally unconfigured.
 - `ui`: Today decision screen and Health diagnostics.
@@ -59,13 +60,14 @@ Dependencies point inward. SDK types stop at repository boundaries.
 
 ## Supabase/auth next slice
 
-Auth is intentionally not wired in this foundation commit because no shared RecoverySnapshot source exists yet and production credentials must not be copied from another checkout. The implementation sequence is:
+The foundation accepts a local project URL and publishable key and checks the REST endpoint without reading a table. Auth is intentionally not wired because no shared RecoverySnapshot source exists yet and production credentials must not be copied from another checkout. The implementation sequence is:
 
-1. provide local public URL/anon-key configuration through ignored developer properties;
-2. add an auth repository and encrypted session storage;
-3. implement login/restore/logout states in `RunMateAppStore`;
-4. read only existing authorized data;
-5. keep RecoverySnapshot unavailable until an approved provider exists.
+1. verify the local public URL/publishable-key connection;
+2. approve identity and existing table contracts;
+3. add an auth repository and encrypted session storage;
+4. implement login/restore/logout states in `RunMateAppStore`;
+5. read only existing authorized data;
+6. keep RecoverySnapshot unavailable until an approved provider exists.
 
 ## Git and release discipline
 

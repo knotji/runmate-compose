@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.StateFlow
 
-enum class AppDestination { TODAY, HEALTH }
+enum class AppDestination { TODAY, HEALTH, MOVE, COACH }
 
 class RunMateAppStore(private val savedStateHandle: SavedStateHandle) : ViewModel() {
     val destination: StateFlow<AppDestination> = savedStateHandle.getStateFlow(DESTINATION_KEY, AppDestination.TODAY)
