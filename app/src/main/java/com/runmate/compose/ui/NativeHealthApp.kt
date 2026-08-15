@@ -138,10 +138,12 @@ fun NativeHealthApp(
         ) { padding ->
             Box(Modifier.padding(padding).fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> TodayDecisionScreen(viewModel)
+                    0 -> TodayDecisionScreen(viewModel) {
+                        if (appStore == null) previewTab = 1 else appStore.navigate(AppDestination.HEALTH)
+                    }
                     1 -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
                     2 -> MoveScreen(viewModel, supabaseViewModel)
-                    else -> CoachScreen(supabaseViewModel)
+                    else -> YouScreen(supabaseViewModel)
                 }
             }
         }
@@ -154,7 +156,7 @@ private fun LabNavigation(selected: Int, onSelect: (Int) -> Unit) {
         "Today" to Icons.Rounded.Home,
         "Health" to Icons.Rounded.Favorite,
         "Move" to Icons.AutoMirrored.Rounded.DirectionsWalk,
-        "Coach" to Icons.Rounded.Psychology,
+        "You" to Icons.Rounded.Psychology,
     )
     NavigationBar(containerColor = Color.White, tonalElevation = 10.dp) {
         items.forEachIndexed { index, item ->
@@ -242,7 +244,7 @@ private fun HistoryEntry(item: HistorySummary) {
 }
 
 @Composable
-private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
+private fun YouScreen(viewModel: SupabaseConnectionViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value ?: SupabaseConnectionState.NotConfigured
     val accountState = viewModel?.accountState?.collectAsStateWithLifecycle()?.value ?: AccountState.SignedOut()
     LaunchedEffect(viewModel) { viewModel?.checkConnection() }
@@ -257,8 +259,8 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { ScreenHeading("COACH", "Understand The Next Step", "Guidance will use your goals and measured health only when the evidence contract is ready.") }
-        item { SectionHeading("CONTEXT", "Based On Your Data") }
+        item { ScreenHeading("YOU", "What Matters For You", "Your goals, context, privacy, and account controls live here.") }
+        item { SectionHeading("CURRENT FOCUS", "Goals And Personal Context") }
         item { HubEntry(Icons.Rounded.Favorite, "Supabase", status, if (state == SupabaseConnectionState.Connected) "CONNECTED" else "CHECK") }
         when (val account = accountState) {
             AccountState.Restoring -> item { DarkHealthCard("Account", "Restoring encrypted session…") }
@@ -275,11 +277,7 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
                 item { Button(onClick = { viewModel?.signOut() }, modifier = Modifier.fillMaxWidth()) { Text("Sign out") } }
             }
         }
-        item { SectionHeading("TOPICS", "What Would You Like To Explore?") }
-        item { HubEntry(Icons.Rounded.NightsStay, "Sleep and recovery", "Review measured sleep before future coaching.", "COMING LATER") }
-        item { HubEntry(Icons.AutoMirrored.Rounded.DirectionsRun, "Movement and training", "Connect plans only after the shared contract is approved.", "COMING LATER") }
-        item { HubEntry(Icons.Rounded.Restaurant, "Fuel and nutrition", "No nutrition records are connected in Compose yet.", "NOT CONNECTED") }
-        item { HubEntry(Icons.Rounded.AutoAwesome, "AI conversation", "Unavailable until consent and evidence rules are approved.", "DISABLED") }
+        item { SectionHeading("YOUR CONTROLS", "Account And Data") }
         item {
             Button(
                 onClick = { viewModel?.checkConnection() },
@@ -343,7 +341,7 @@ private fun TodayMockup() {
         item { RecoveryHero() }
         item { TrainingCard() }
         item { EnergyCard() }
-        item { CoachInsightCard() }
+        item { ContextInsightCard() }
         item { Text("PREVIEW DATA • COMPOSE LAB", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
     }
 }
@@ -444,7 +442,7 @@ private fun EnergyCard() = LightCard {
 }
 
 @Composable
-private fun CoachInsightCard() = LightCard(container = Color(0xFFEAF5FC)) {
+private fun ContextInsightCard() = LightCard(container = Color(0xFFEAF5FC)) {
     Row(verticalAlignment = Alignment.Top) {
         IconBubble(Icons.Rounded.Insights, Color.White, Ocean)
         Column(Modifier.padding(start = 14.dp).weight(1f)) {

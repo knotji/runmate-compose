@@ -22,7 +22,19 @@ class NativeHealthAppTest {
         compose.setContent { NativeHealthApp(experimentEnabled = true) }
         compose.onNodeWithText("Today").assertIsDisplayed()
         compose.onNodeWithText("Health Connect unavailable").assertIsDisplayed()
+        compose.onNodeWithText("WHAT IS SHAPING TODAY").assertIsDisplayed()
+        compose.onNodeWithText("WHAT NEXT").assertIsDisplayed()
+        compose.onNodeWithText("You").assertIsDisplayed()
+        compose.onNodeWithText("Coach").assertDoesNotExist()
         compose.onNodeWithText("Health").performClick()
         compose.onNodeWithText("Health Dashboard").assertIsDisplayed()
+    }
+
+    @Test
+    fun youDestinationDoesNotExposeCoachTopics() {
+        compose.setContent { NativeHealthApp(experimentEnabled = true) }
+        compose.onNodeWithText("You").performClick()
+        compose.onNodeWithText("What Matters For You").assertIsDisplayed()
+        compose.onNodeWithText("AI conversation").assertDoesNotExist()
     }
 }

@@ -4,7 +4,7 @@
 
 This is the canonical product IA target for the next UI slice. It defines screen ownership and rough structure before visual design or navigation implementation.
 
-The current Android code still labels its fourth destination `Coach`. That is implementation debt, not the IA target. No shared architecture, provider, recovery logic, or new health capability is authorized by this document.
+Android and Web now label the fourth destination `You`. No shared architecture, provider, recovery logic, or new health capability is authorized by this document.
 
 ## IA test
 

@@ -86,7 +86,7 @@ private val Night = Color(0xFF071C31)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
+fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?, onOpenHealth: () -> Unit = {}) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
         ?: HealthDashboardUiState.Unavailable
     val content = when (state) {
@@ -105,6 +105,12 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) {
         viewModel?.refresh()
+    }
+    val requestPermission = {
+        val missing = (state as? HealthDashboardUiState.PermissionRequired)?.missing
+        if (missing != null) permissionLauncher.launch(missing)
+        else runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
+        Unit
     }
 
     LaunchedEffect(viewModel) { viewModel?.refresh() }
@@ -125,22 +131,17 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
                     state = state,
                     data = content,
                     bodyPicture = bodyPicture,
-                    onRefresh = { viewModel?.refresh() },
-                    onPermission = {
-                        val missing = (state as? HealthDashboardUiState.PermissionRequired)?.missing
-                        if (missing != null) permissionLauncher.launch(missing)
-                        else runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
-                    },
                 )
             }
+            item { TodayShapingCard(state, content, bodyPicture, onOpenHealth) }
             item {
-                Text(
-                    "DETAILS AND TRENDS ARE IN HEALTH",
-                    color = Muted,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
+                TodayNextCard(
+                    state = state,
+                    data = content,
+                    bodyPicture = bodyPicture,
+                    onOpenHealth = onOpenHealth,
+                    onRefresh = { viewModel?.refresh() },
+                    onPermission = requestPermission,
                 )
             }
         }
@@ -179,15 +180,15 @@ private fun HealthStatusHero(
     state: HealthDashboardUiState,
     data: HealthDashboardData?,
     bodyPicture: BodyPictureModel?,
-    onRefresh: () -> Unit,
-    onPermission: () -> Unit,
 ) {
     val title: String
     val detail: String
     val ready = data != null
+    val selectedSignals = bodyPicture?.signals.orEmpty().filter { it.value != null }
+    val availableRecords = data.availableRecordCount()
     when (state) {
         is HealthDashboardUiState.Loading -> {
-            title = if (ready) "Updating your signals" else "Reading your signals"
+            title = if (ready) "Today's picture is updating" else "Reading today's signals"
             detail = if (ready) "Your previous records remain visible while Health Connect refreshes." else "Fetching the latest records from Health Connect."
         }
         HealthDashboardUiState.Unavailable -> {
@@ -199,13 +200,20 @@ private fun HealthStatusHero(
             detail = "Allow access to read your measured health records."
         }
         is HealthDashboardUiState.Error -> {
-            title = "Health data could not load"
-            detail = state.message
+            title = if (ready) "Your last picture is still available" else "Health data could not load"
+            detail = if (ready) "Refresh failed; no newer conclusion is shown." else state.message
         }
         is HealthDashboardUiState.Content -> {
-            val available = listOf(data?.sleep, data?.heartRate, data?.hrv, data?.respiratoryRate, data?.latestActivity, data?.stepsToday).count { it != null }
-            title = "Today's body picture"
-            detail = "$available of 6 measured signals available today"
+            title = when (selectedSignals.size) {
+                0 -> "Not enough evidence for today's picture"
+                1 -> "${selectedSignals.first().label} is available today"
+                else -> "Your body picture is ready"
+            }
+            detail = when {
+                selectedSignals.isEmpty() && availableRecords > 0 -> "$availableRecords measured records loaded; none are selected for the Body Picture yet."
+                selectedSignals.isEmpty() -> "No measured signal is available for the Body Picture."
+                else -> "${selectedSignals.size} selected ${if (selectedSignals.size == 1) "signal" else "signals"} shown from $availableRecords available measured records."
+            }
         }
     }
 
@@ -233,28 +241,17 @@ private fun HealthStatusHero(
             }
             Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
             if (data != null) {
-                if (bodyPicture != null) BodySnapshotRow(bodyPicture)
+                if (selectedSignals.isNotEmpty()) BodySnapshotRow(selectedSignals)
                 Text("Measured and calculated facts only • no AI interpretation", color = Color.White.copy(.58f), fontSize = 9.sp)
-            }
-            if (state is HealthDashboardUiState.PermissionRequired) {
-                Button(
-                    onClick = onPermission,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Night),
-                ) { Text("Allow health access", fontWeight = FontWeight.Bold) }
-            } else if (state is HealthDashboardUiState.Error || (!ready && state !is HealthDashboardUiState.Loading)) {
-                Button(
-                    onClick = onRefresh,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Night),
-                ) { Text("Try again", fontWeight = FontWeight.Bold) }
             }
         }
     }
 }
 
 @Composable
-private fun BodySnapshotRow(model: BodyPictureModel) {
+private fun BodySnapshotRow(signals: List<BodyPictureSignal>) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        model.signals.forEach { signal ->
+        signals.take(3).forEach { signal ->
             SnapshotRing(
                 label = signal.label.uppercase(Locale.ENGLISH),
                 value = signal.displayValue(),
@@ -265,6 +262,72 @@ private fun BodySnapshotRow(model: BodyPictureModel) {
         }
     }
 }
+
+@Composable
+private fun TodayShapingCard(
+    state: HealthDashboardUiState,
+    data: HealthDashboardData?,
+    bodyPicture: BodyPictureModel?,
+    onOpenHealth: () -> Unit,
+) = SurfaceCard {
+    val signals = bodyPicture?.signals.orEmpty().filter { it.value != null }
+    Text("WHAT IS SHAPING TODAY", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    val title = when {
+        signals.isEmpty() -> "No shaping factor can be identified yet"
+        state is HealthDashboardUiState.Error -> "${signals.first().label} was the clearest selected signal"
+        state is HealthDashboardUiState.Loading -> "${signals.first().label} is the clearest signal in the picture being refreshed"
+        else -> "${signals.first().label} is the clearest selected signal today"
+    }
+    val detail = when {
+        signals.isEmpty() && data.availableRecordCount() > 0 -> "Measured records exist, but the current policy has not selected enough evidence for an explanation."
+        signals.isEmpty() -> "Missing evidence stays missing; no cause or pattern is inferred."
+        signals.size == 1 -> "Other selected body signals do not have enough data, so no Recovery or Strain conclusion is made."
+        else -> "Only selected measured evidence is used here; no AI interpretation is added."
+    }
+    Text(title, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))
+    Text(detail, color = Muted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 6.dp))
+    if (signals.isNotEmpty()) {
+        Button(onClick = onOpenHealth, modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 4.dp)) {
+            Text("Review ${signals.first().label.lowercase(Locale.ENGLISH)} evidence")
+        }
+    }
+}
+
+@Composable
+private fun TodayNextCard(
+    state: HealthDashboardUiState,
+    data: HealthDashboardData?,
+    bodyPicture: BodyPictureModel?,
+    onOpenHealth: () -> Unit,
+    onRefresh: () -> Unit,
+    onPermission: () -> Unit,
+) = SurfaceCard {
+    val signals = bodyPicture?.signals.orEmpty().filter { it.value != null }
+    Text("WHAT NEXT", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    val instruction = when {
+        state is HealthDashboardUiState.PermissionRequired -> "Allow health access before WholeMate draws a daily conclusion."
+        state is HealthDashboardUiState.Error -> "Retry refresh before using this picture for a new decision."
+        state is HealthDashboardUiState.Loading -> "Wait for refresh to finish; keep using only the last available picture."
+        state == HealthDashboardUiState.Unavailable -> "Check Health Connect availability on this device."
+        signals.isEmpty() && data.availableRecordCount() > 0 -> "Open Health to review the available records and their data quality."
+        signals.isEmpty() -> "Open Health and review data access before drawing a conclusion."
+        else -> "Review the selected evidence in Health before making today's decision."
+    }
+    Text(instruction, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
+    val actionLabel: String
+    val action: () -> Unit
+    when {
+        state is HealthDashboardUiState.PermissionRequired -> { actionLabel = "Allow health access"; action = onPermission }
+        state is HealthDashboardUiState.Error || state == HealthDashboardUiState.Unavailable -> { actionLabel = "Try again"; action = onRefresh }
+        state !is HealthDashboardUiState.Loading -> { actionLabel = "Open Health"; action = onOpenHealth }
+        else -> return@SurfaceCard
+    }
+    Button(onClick = action, modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 4.dp)) { Text(actionLabel) }
+}
+
+private fun HealthDashboardData?.availableRecordCount(): Int = this?.let {
+    listOf(it.sleep, it.heartRate, it.hrv, it.respiratoryRate, it.latestActivity, it.stepsToday).count { record -> record != null }
+} ?: 0
 
 private fun BodyPictureSignal.displayValue(): String = value?.let { "$it${unit.orEmpty()}" } ?: "--"
 

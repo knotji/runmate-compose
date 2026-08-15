@@ -24,8 +24,8 @@ Missing stays missing. AI is optional to comprehension. Health-provider reads re
 - [x] Health Connect permission/read flow for Sleep, HR, HRV RMSSD, respiratory rate, steps, and activity.
 - [x] Explicit loading, permission, unavailable, empty, partial, and error presentation.
 - [x] Google OAuth PKCE, Android Keystore-backed session restore/refresh/logout, owner profile, and read-only history.
-- [x] Current Android implementation has Today, Health, Move, and Coach navigation on one visual system.
-- [x] IA v1 target is locked as Today, Health, Move, and You; code migration remains pending.
+- [x] Android and Web use Today, Health, Move, and You navigation on one visual system.
+- [x] Android Today preserves the Body Picture, shaping, and next-step hierarchy across load states.
 - [x] Web design lab exposes the four-destination IA shell with deterministic ready, partial, missing, loading, and error states.
 - [x] Initial Recovery, Strain, and Sleep hero without fabricated unavailable scores.
 - [x] Deterministic personal baselines with missing-data rules.

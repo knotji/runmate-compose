@@ -4,7 +4,7 @@ Entries are append-only decisions. A superseding entry wins; older entries remai
 
 ## 2026-08-15 - IA v1 uses Today, Health, Move, and You
 
-**Supersedes the Coach top-level destination.** Today owns the whole daily story and its evidence-backed next step. Health owns body evidence over time. Move owns movement/activity. You owns goals, explicit context, reflection, privacy, and account control. Coaching remains contextual product behavior; a future conversation may open from an insight or goal but does not receive a primary tab by default. The Android code still says `Coach` until the IA implementation slice changes it.
+**Supersedes the Coach top-level destination.** Today owns the whole daily story and its evidence-backed next step. Health owns body evidence over time. Move owns movement/activity. You owns goals, explicit context, reflection, privacy, and account control. Coaching remains contextual product behavior; a future conversation may open from an insight or goal but does not receive a primary tab by default. Android and Web now use the four IA v1 destination labels.
 
 ## 2026-08-15 - WholeMate product constitution
 
