@@ -323,6 +323,7 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
                 item { DarkHealthCard("HRV (RMSSD)", HealthDisplayFormatter.hrv(current.data.hrv)) }
                 item { DarkHealthCard("Respiratory rate", HealthDisplayFormatter.respiratoryRate(current.data.respiratoryRate)) }
                 item { DarkHealthCard("Latest activity", HealthDisplayFormatter.activity(current.data.latestActivity)) }
+                item { DarkHealthCard("Steps today", HealthDisplayFormatter.steps(current.data.stepsToday)) }
                 item { Button(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.Refresh, null); Text(" Refresh") } }
             }
             is HealthDashboardUiState.Error -> {

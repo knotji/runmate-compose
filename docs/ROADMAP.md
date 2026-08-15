@@ -59,6 +59,7 @@ Goal: make Today useful without pretending that a recovery decision exists.
 - Add a visible last-sync timestamp and manual refresh result.
 - [x] Add neutral Sleep and Heart Rate personal-baseline comparisons with minimum-data rules.
 - [ ] Design Stress, Mood, Energy, and goal input as a secondary flow; do not place questionnaires in the Today scroll.
+- [ ] Expand Health Connect through explicit consent groups defined in `HEALTH_DATA_CATALOG.md`; never request every sensitive type in one prompt.
 
 Acceptance:
 

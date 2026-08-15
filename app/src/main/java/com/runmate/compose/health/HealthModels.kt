@@ -66,6 +66,17 @@ data class ActivitySummary(
     }
 }
 
+data class DailyStepsSummary(
+    val count: Long,
+    val startedAt: Instant,
+    val endedAt: Instant,
+) {
+    init {
+        require(count >= 0) { "Step count cannot be negative" }
+        require(!endedAt.isBefore(startedAt)) { "Steps interval end must not precede start" }
+    }
+}
+
 object HealthDisplayFormatter {
     fun sleep(value: SleepSummary?, zoneId: ZoneId = ZoneId.systemDefault()): String {
         if (value == null) return "No sleep data in the last 30 days"
@@ -90,6 +101,9 @@ object HealthDisplayFormatter {
         val name = value.title?.takeIf(String::isNotBlank) ?: "Activity type ${value.typeCode}"
         return "$name • ${value.duration.toMinutes()}m • ${time(value.endedAt, zoneId)}"
     }
+
+    fun steps(value: DailyStepsSummary?): String =
+        value?.let { "%,d steps today".format(it.count) } ?: "No step data for today"
 
     fun time(value: Instant, zoneId: ZoneId = ZoneId.systemDefault()): String =
         DateTimeFormatter.ofPattern("d MMM, HH:mm").withZone(zoneId).format(value)

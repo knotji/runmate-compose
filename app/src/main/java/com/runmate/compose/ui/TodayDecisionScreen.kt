@@ -197,9 +197,9 @@ private fun HealthStatusHero(
             detail = state.message
         }
         is HealthDashboardUiState.Content -> {
-            val available = listOf(data?.sleep, data?.heartRate, data?.hrv, data?.respiratoryRate, data?.latestActivity).count { it != null }
+            val available = listOf(data?.sleep, data?.heartRate, data?.hrv, data?.respiratoryRate, data?.latestActivity, data?.stepsToday).count { it != null }
             title = "Today's body picture"
-            detail = "$available of 5 measured signals available today"
+            detail = "$available of 6 measured signals available today"
         }
     }
 
@@ -266,10 +266,10 @@ private fun BodySnapshotRow(data: HealthDashboardData) {
             color = Gold,
             modifier = Modifier.weight(1f),
         )
-        val available = listOf(data.sleep, data.heartRate, data.hrv, data.respiratoryRate, data.latestActivity).count { it != null }
+        val available = listOf(data.sleep, data.heartRate, data.hrv, data.respiratoryRate, data.latestActivity, data.stepsToday).count { it != null }
         SnapshotRing(
             label = "SIGNALS",
-            value = "$available/5",
+            value = "$available/6",
             context = "MEASURED",
             color = Color(0xFFB7D8FF),
             modifier = Modifier.weight(1f),
@@ -318,6 +318,8 @@ private fun LatestSignalsCard(data: HealthDashboardData) = SurfaceCard {
     SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", HealthDisplayFormatter.respiratoryRate(data.respiratoryRate), data.respiratoryRate?.origin?.appLabel)
     Divider()
     SignalRow(Icons.Rounded.FitnessCenter, "Latest activity", HealthDisplayFormatter.activity(data.latestActivity), data.latestActivity?.origin?.appLabel)
+    Divider()
+    SignalRow(Icons.Rounded.FitnessCenter, "Steps", HealthDisplayFormatter.steps(data.stepsToday), "Health Connect aggregate")
 }
 
 @Composable

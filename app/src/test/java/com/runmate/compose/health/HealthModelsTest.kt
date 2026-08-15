@@ -60,4 +60,12 @@ class HealthModelsTest {
         assertThrows(IllegalArgumentException::class.java) { HrvSummary(Double.NaN, instant) }
         assertThrows(IllegalArgumentException::class.java) { RespiratoryRateSummary(0.0, instant) }
     }
+
+    @Test fun stepsAreTypedAndFormattedAsTodayAggregate() {
+        val start = Instant.parse("2026-08-14T17:00:00Z")
+        val value = DailyStepsSummary(12_345, start, start.plusSeconds(3600))
+
+        assertEquals("12,345 steps today", HealthDisplayFormatter.steps(value))
+        assertThrows(IllegalArgumentException::class.java) { DailyStepsSummary(-1, start, start.plusSeconds(3600)) }
+    }
 }

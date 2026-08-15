@@ -8,6 +8,8 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Duration
@@ -21,6 +23,7 @@ data class HealthDashboardData(
     val hrv: HrvSummary?,
     val respiratoryRate: RespiratoryRateSummary?,
     val latestActivity: ActivitySummary?,
+    val stepsToday: DailyStepsSummary?,
     val sevenDayTrend: List<DailyHealthPoint>,
     val syncedAt: Instant,
 )
@@ -45,6 +48,7 @@ class HealthDashboardRepository(private val context: Context) {
             HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class),
             HealthPermission.getReadPermission(RespiratoryRateRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthPermission.getReadPermission(StepsRecord::class),
         )
     }
 
@@ -70,6 +74,14 @@ class HealthDashboardRepository(private val context: Context) {
             .records.maxByOrNull { it.time }
         val latestActivity = client.readRecords(ReadRecordsRequest<ExerciseSessionRecord>(range, pageSize = 30))
             .records.maxByOrNull { it.endTime }
+        val zone = ZoneId.systemDefault()
+        val startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant()
+        val stepsTotal = client.aggregate(
+            AggregateRequest(
+                metrics = setOf(StepsRecord.COUNT_TOTAL),
+                timeRangeFilter = TimeRangeFilter.between(startOfToday, now),
+            ),
+        )[StepsRecord.COUNT_TOTAL]
 
         return HealthLoadResult.Success(
             HealthDashboardData(
@@ -87,6 +99,7 @@ class HealthDashboardRepository(private val context: Context) {
                         origin = origin(it.metadata.dataOrigin.packageName),
                     )
                 },
+                stepsTotal?.let { DailyStepsSummary(it, startOfToday, now) },
                 buildSevenDayTrend(sleepRecords, heartRateRecords),
                 syncedAt = now,
             ),
