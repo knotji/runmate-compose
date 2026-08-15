@@ -41,7 +41,7 @@ fun LoginScreen(state: AccountState, viewModel: SupabaseConnectionViewModel) {
     val busy = state == AccountState.Restoring || state == AccountState.Working || state == AccountState.AwaitingGoogle
     Box(
         Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(Color(0xFF071C31), Color(0xFF0B4057), Color(0xFFF3F8FC))),
+            Brush.verticalGradient(listOf(Color(0xFFE7F7FB), Color(0xFFF3F8FC), Color.White)),
         ).padding(28.dp),
     ) {
         Column(
@@ -49,14 +49,14 @@ fun LoginScreen(state: AccountState, viewModel: SupabaseConnectionViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(Modifier.size(76.dp).clip(CircleShape).background(Color.White.copy(.12f)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.MonitorHeart, null, tint = Color(0xFF9BE7F5), modifier = Modifier.size(40.dp))
+            Box(Modifier.size(76.dp).clip(CircleShape).background(Color(0xFF197C9B)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.MonitorHeart, null, tint = Color.White, modifier = Modifier.size(40.dp))
             }
             Spacer(Modifier.height(22.dp))
-            Text("WholeMate", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Black)
+            Text("WholeMate", color = Color(0xFF142A46), fontSize = 34.sp, fontWeight = FontWeight.Black)
             Text(
                 "Understand your body, one day at a time.",
-                color = Color.White.copy(.75f),
+                color = Color(0xFF667A91),
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center,
             )
@@ -70,7 +70,7 @@ fun LoginScreen(state: AccountState, viewModel: SupabaseConnectionViewModel) {
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF142A46)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF197C9B), contentColor = Color.White),
             ) {
                 if (busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 else Text("Continue with Google", fontWeight = FontWeight.Bold)

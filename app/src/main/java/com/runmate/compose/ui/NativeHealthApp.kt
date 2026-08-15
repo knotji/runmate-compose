@@ -48,6 +48,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -97,7 +98,17 @@ fun NativeHealthApp(
     appStore: RunMateAppStore? = null,
     supabaseViewModel: SupabaseConnectionViewModel? = null,
 ) {
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = lightColorScheme(
+            primary = Ocean,
+            onPrimary = Color.White,
+            background = Canvas,
+            onBackground = Ink,
+            surface = Color.White,
+            onSurface = Ink,
+            secondary = Color(0xFF4E7484),
+        ),
+    ) {
         if (!experimentEnabled) {
             ExperimentDisabled()
             return@MaterialTheme
@@ -115,7 +126,7 @@ fun NativeHealthApp(
         var previewTab by remember { mutableIntStateOf(0) }
         val selectedTab = storedDestination?.ordinal ?: previewTab
         Scaffold(
-            containerColor = if (selectedTab == 0) Canvas else DarkBackground,
+            containerColor = Canvas,
             bottomBar = {
                 LabNavigation(selectedTab) { index ->
                     if (appStore == null) previewTab = index else appStore.navigate(AppDestination.entries[index])
@@ -246,29 +257,29 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
 @Composable
 private fun ScreenHeading(label: String, title: String, detail: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, color = RunMateGreen, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-        Text(title, color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
-        Text(detail, color = Color(0xFFB8C9C2), fontSize = 13.sp, lineHeight = 19.sp)
+        Text(label, color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+        Text(title, color = Ink, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+        Text(detail, color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
     }
 }
 
 @Composable
 private fun SectionHeading(label: String, title: String) {
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(label, color = RunMateGreen, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-        Text(title, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+        Text(label, color = Ocean, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+        Text(title, color = Ink, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
 @Composable
 private fun HubEntry(icon: ImageVector, title: String, detail: String, status: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = DarkCard), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconBubble(icon, Color(0xFF243832), RunMateGreen)
+            IconBubble(icon, Color(0xFFE1F4FA), Ocean)
             Column(Modifier.padding(start = 13.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold)
-                Text(detail, color = Color(0xFFB8C9C2), fontSize = 12.sp, lineHeight = 17.sp)
-                Text(status, color = RunMateGreen, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .7.sp)
+                Text(title, color = Ink, fontWeight = FontWeight.Bold)
+                Text(detail, color = Muted, fontSize = 12.sp, lineHeight = 17.sp)
+                Text(status, color = Ocean, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .7.sp)
             }
         }
     }
@@ -276,11 +287,11 @@ private fun HubEntry(icon: ImageVector, title: String, detail: String, status: S
 
 @Composable
 private fun CompactToolCard(icon: ImageVector, title: String, detail: String, modifier: Modifier = Modifier) {
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = DarkCard), shape = RoundedCornerShape(16.dp)) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), shape = RoundedCornerShape(16.dp)) {
         Column(Modifier.padding(vertical = 14.dp, horizontal = 8.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, tint = RunMateGreen)
-            Text(title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
-            Text(detail, color = Color(0xFF8FA69D), fontSize = 8.sp, textAlign = TextAlign.Center)
+            Icon(icon, null, tint = Ocean)
+            Text(title, color = Ink, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+            Text(detail, color = Muted, fontSize = 8.sp, textAlign = TextAlign.Center)
         }
     }
 }
@@ -495,7 +506,7 @@ private fun LoadingState() = Column(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.spacedBy(12.dp),
 ) {
-    CircularProgressIndicator(color = RunMateGreen)
+    CircularProgressIndicator(color = Ocean)
     Text("Reading Health Connect…", color = Color(0xFFB8C9C2))
 }
 
@@ -505,16 +516,16 @@ private fun HealthUnavailable() = LazyColumn(
     contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
 ) {
-    item { Text("Health Dashboard", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
+    item { Text("Health Dashboard", color = Ink, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
     item { DarkHealthCard("Health Connect", "No data source is attached") }
 }
 
 @Composable
 private fun DarkHealthCard(title: String, body: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = DarkCard), modifier = Modifier.fillMaxWidth()) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, color = Color.White, fontWeight = FontWeight.SemiBold)
-            Text(body, color = Color(0xFFB8C9C2))
+            Text(title, color = Ink, fontWeight = FontWeight.SemiBold)
+            Text(body, color = Muted)
         }
     }
 }
