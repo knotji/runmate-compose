@@ -13,7 +13,7 @@ class NativeHealthAppTest {
     @Test
     fun experimentIsDisabledByDefault() {
         compose.setContent { NativeHealthApp(experimentEnabled = false) }
-        compose.onNodeWithText("RunMate Compose Lab").assertIsDisplayed()
+        compose.onNodeWithText("WholeMate").assertIsDisplayed()
         compose.onNodeWithText("Health Dashboard").assertDoesNotExist()
     }
 

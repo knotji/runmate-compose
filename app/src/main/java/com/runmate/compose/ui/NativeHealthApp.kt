@@ -278,7 +278,7 @@ private fun IconBubble(icon: ImageVector, background: Color, tint: Color) {
 private fun ExperimentDisabled() {
     Surface(color = DarkBackground, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
-            Text("RunMate Compose Lab", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+            Text("WholeMate", color = Color.White, style = MaterialTheme.typography.headlineMedium)
             Text("Native experiment is disabled.", color = Color(0xFFB8C9C2), modifier = Modifier.padding(top = 12.dp))
         }
     }

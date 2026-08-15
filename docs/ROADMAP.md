@@ -1,10 +1,12 @@
-# RunMate Compose Roadmap
+# WholeMate Roadmap
 
 ## Purpose
 
 This roadmap turns the Compose Lab into a sequence of reversible product experiments. Completion means the acceptance criteria are demonstrated on the target Samsung device; a successful build alone is not enough.
 
 The product direction is health-first. Running remains supported as one activity type, while the system, navigation, and Today experience are built around broader health signals.
+
+The working product concept and AI/mental-health boundaries are defined in `PRODUCT_CONCEPT.md`.
 
 ## Product principles
 

@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-08-15 - WholeMate working product name
+
+Use **WholeMate** as the working user-facing name for the health-first experiment. It represents whole-body and mind support while retaining the companion meaning of “Mate.” Keep the existing package, Firebase app, repository, and internal identifiers until formal brand clearance and a planned identity migration.
+
 ## 2026-08-15 - Health-first product axis
 
 Compose is designed as a personal health application rather than a running application with health cards. Running remains an activity type. Today, navigation, data ownership, and future recommendations must make sense across sleep, cardiovascular, respiratory, recovery, and multiple activity types.

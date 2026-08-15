@@ -1,10 +1,10 @@
-# RunMate Compose UI System
+# WholeMate UI System
 
 This file is the implementation contract for visual work. A screen change is incomplete when its values conflict with this document without updating the document in the same commit.
 
 ## Product character
 
-RunMate is calm, precise, supportive, and athletic. It must not look clinical, gamified, or alarmist. Health facts and RunMate interpretations must remain visually distinguishable.
+WholeMate is calm, precise, supportive, and human. It must not look clinical, gamified, alarmist, or exclusively athletic. Health facts, user reports, calculations, and AI interpretations must remain visually distinguishable.
 
 ## Logo and launcher
 

@@ -26,7 +26,7 @@ class HealthPermissionsRationaleActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize().padding(24.dp),
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Text("RunMate Compose Lab", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                        Text("WholeMate", color = Color.White, style = MaterialTheme.typography.headlineMedium)
                         Text(
                             "This experiment reads sleep, heart rate, and workout data to compare a native Health Connect experience. It does not write or modify health records.",
                             color = Color(0xFFB8C9C2),

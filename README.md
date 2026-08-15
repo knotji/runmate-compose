@@ -1,10 +1,11 @@
-# RunMate Compose Lab
+# WholeMate
 
-An isolated, greenfield Android Jetpack Compose experiment for RunMate. It does not copy, replace, or modify `runmate-mobile`; capabilities are implemented and verified incrementally.
+An isolated, greenfield Android health companion experiment, formerly the RunMate Compose Lab. WholeMate explores whole-body and mental wellbeing without copying, replacing, or modifying `runmate-mobile`.
 
 ## Engineering contracts
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Product concept](docs/PRODUCT_CONCEPT.md)
 - [Roadmap](docs/ROADMAP.md)
 - [UI system](docs/UI_SYSTEM.md)
 - [State and loading](docs/STATE_AND_LOADING.md)
