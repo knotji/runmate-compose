@@ -4,6 +4,17 @@
 
 RunMate Compose is an isolated Android-first client experiment. It may read production-compatible data, but it must not silently become a second recovery engine or introduce production persistence.
 
+## Greenfield implementation boundary
+
+`runmate-compose` is not a source-code port of `runmate-mobile`. Capabilities are designed and implemented incrementally inside this repository.
+
+- Do not copy screens, components, stores, CSS, TypeScript business logic, or project structure from `runmate-mobile`.
+- Use `runmate-mobile` only to understand verified user behavior, existing data contracts, compatibility constraints, and baseline results.
+- Reuse an asset only when it is an approved shared brand asset, such as the RunMate launcher logo, and record its origin.
+- Integrate through explicit versioned contracts rather than translating implementation details between languages.
+- A capability enters Compose only when its own scope, states, tests, and device acceptance criteria are defined.
+- Do not pursue screen-for-screen parity unless a later product decision explicitly requires it.
+
 ## Layers
 
 ```text

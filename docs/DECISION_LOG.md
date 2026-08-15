@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-08-15 - Greenfield capability slices
+
+Do not copy or mechanically port `runmate-mobile` into this repository. Build one independently testable Compose capability at a time. The existing application may supply behavioral baselines and data-contract compatibility requirements, but not implementation structure or business-logic duplication. Approved shared brand assets are the only default exception.
+
 ## 2026-08-15 - Android-only Compose Lab
 
 Use Jetpack Compose rather than Flutter for the first experiment because RunMate is currently Android/Samsung/Health Connect heavy and already owns Kotlin native integrations. This does not decide the future iOS strategy.

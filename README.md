@@ -1,6 +1,6 @@
 # RunMate Compose Lab
 
-An isolated Android Jetpack Compose experiment for RunMate. It does not replace or modify `runmate-mobile`.
+An isolated, greenfield Android Jetpack Compose experiment for RunMate. It does not copy, replace, or modify `runmate-mobile`; capabilities are implemented and verified incrementally.
 
 ## Engineering contracts
 

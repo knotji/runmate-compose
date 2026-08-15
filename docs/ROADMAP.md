@@ -11,6 +11,7 @@ This roadmap turns the Compose Lab into a sequence of reversible product experim
 - Keep Health Connect access read-only until a separate write use case is approved.
 - Make every milestone independently releasable and removable.
 - Update the relevant contract and tests with every behavior change.
+- Build each capability as a greenfield Compose implementation; do not copy or mechanically port `runmate-mobile` source.
 
 ## Current baseline
 
@@ -139,6 +140,7 @@ Decision rules:
 - Compose Multiplatform or an iOS client.
 - Production database migrations or health-data writes.
 - Full migration away from `runmate-mobile`.
+- Screen-for-screen or source-for-source parity with `runmate-mobile`.
 
 ## Next executable slice
 
