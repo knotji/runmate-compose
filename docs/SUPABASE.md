@@ -1,6 +1,6 @@
 # Supabase foundation
 
-The Android client currently performs one safe operation: it calls the project REST root to verify that the configured public project endpoint is reachable. It does not authenticate, query a table, mutate data, or upload health records.
+The Android client checks the Auth health endpoint, supports existing email/password accounts, restores an encrypted session, refreshes an expired token, and reads a minimal owner profile. It does not create accounts, mutate data, or upload health records.
 
 ## Local configuration
 
@@ -16,6 +16,7 @@ CI may instead provide `WHOLEMATE_SUPABASE_URL` and `WHOLEMATE_SUPABASE_PUBLISHA
 ## Safety boundary
 
 - No credential value is logged or rendered.
-- No account session exists yet.
-- No table access or production write exists yet.
-- All future table access requires authenticated Row Level Security tests with isolated accounts.
+- Access and refresh tokens are encrypted with a non-exportable Android Keystore AES-GCM key.
+- Profile access is a filtered read of `profiles` where `id` equals the authenticated user ID.
+- No table write or production migration exists.
+- A two-account RLS device test remains required before broadening table access.

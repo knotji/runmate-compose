@@ -28,6 +28,7 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 - [x] Firebase App Distribution flow and Samsung tester established.
 - [x] Today, Health, Move, and Coach navigation with honest unavailable states.
 - [x] Supabase public-client configuration and project reachability check without auth or data access.
+- [x] Existing-account email/password sign-in, encrypted restore/refresh/logout, and minimal read-only profile.
 - [ ] Physical-device acceptance pass recorded for the real-data Today screen.
 - [x] Sleep and Heart Rate use typed domain models; display formatting is outside the repository.
 
@@ -96,9 +97,10 @@ Acceptance:
 
 Goal: connect the Lab to existing user-owned data without changing production data semantics.
 
-- Add local public Supabase configuration; keep secrets untracked.
-- Implement login, encrypted session persistence, restore, logout, and expired-session states.
-- Read existing authorized profile and history through repositories.
+- [x] Add local public Supabase configuration; keep secrets untracked.
+- [x] Implement login, encrypted session persistence, restore, logout, and expired-session states.
+- [x] Read the existing authorized profile through a repository.
+- Read existing authorized history through repositories after its minimum contract is approved.
 - Verify Row Level Security with two isolated test accounts.
 - Do not add migrations or production writes as part of the read-only milestone.
 

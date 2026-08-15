@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -58,6 +59,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +75,7 @@ import com.runmate.compose.state.AppDestination
 import com.runmate.compose.state.RunMateAppStore
 import com.runmate.compose.supabase.SupabaseConnectionState
 import com.runmate.compose.supabase.SupabaseConnectionViewModel
+import com.runmate.compose.supabase.AccountState
 
 private val Ink = Color(0xFF142A46)
 private val Muted = Color(0xFF667A91)
@@ -174,6 +179,12 @@ private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
 @Composable
 private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value ?: SupabaseConnectionState.NotConfigured
+    val accountState = viewModel?.accountState?.collectAsStateWithLifecycle()?.value ?: AccountState.SignedOut()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    LaunchedEffect(accountState) {
+        if (accountState is AccountState.SignedIn) password = ""
+    }
     LaunchedEffect(viewModel) { viewModel?.checkConnection() }
     val status = when (state) {
         SupabaseConnectionState.NotConfigured -> "Local project URL and publishable key are not configured"
@@ -189,8 +200,50 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
         item { Text("Coach", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
         item { Text("Future guidance across body, activity, recovery, and stress.", color = Color(0xFFB8C9C2)) }
         item { DarkHealthCard("Supabase", status) }
-        item { DarkHealthCard("Account", "Not connected yet") }
-        item { DarkHealthCard("AI guidance", "Unavailable until identity, consent, and evidence rules are approved") }
+        when (val account = accountState) {
+            AccountState.Restoring -> item { DarkHealthCard("Account", "Restoring encrypted session…") }
+            AccountState.Working -> item { LoadingState() }
+            is AccountState.SignedOut -> {
+                item { DarkHealthCard("Account", account.message ?: "Sign in to read your existing profile") }
+                item {
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                item {
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                item {
+                    Button(
+                        onClick = { viewModel?.signIn(email, password) },
+                        enabled = viewModel != null && email.isNotBlank() && password.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Sign in") }
+                }
+            }
+            is AccountState.SignedIn -> {
+                item { DarkHealthCard("Account", account.profile?.displayName ?: account.session.email) }
+                item { DarkHealthCard("Main health goal", account.profile?.mainGoal ?: "No goal saved") }
+                account.profile?.secondaryGoal?.let { item { DarkHealthCard("Secondary goal", it) } }
+                account.profileError?.let { item { DarkHealthCard("Profile unavailable", it) } }
+                item { Button(onClick = { viewModel?.retryProfile() }, modifier = Modifier.fillMaxWidth()) { Text("Refresh profile") } }
+                item { Button(onClick = { viewModel?.signOut() }, modifier = Modifier.fillMaxWidth()) { Text("Sign out") } }
+            }
+        }
+        item { DarkHealthCard("AI guidance", "Unavailable until consent and evidence rules are approved") }
         item {
             Button(
                 onClick = { viewModel?.checkConnection() },
