@@ -7,7 +7,8 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // Kotlin/Wasm configures its verified Node.js distribution repository for browser tooling.
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
@@ -16,3 +17,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RunMateCompose"
 include(":app")
+include(":shared")

@@ -61,10 +61,12 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+        optIn.add("kotlin.time.ExperimentalTime")
     }
 }
 
 dependencies {
+    implementation(project(":shared"))
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

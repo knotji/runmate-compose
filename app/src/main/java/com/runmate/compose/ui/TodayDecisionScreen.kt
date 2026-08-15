@@ -74,7 +74,6 @@ import com.runmate.compose.health.PersonalBaseline
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
 private val Ink = Color(0xFF142A46)
@@ -384,7 +383,7 @@ private fun SevenDayChart(points: List<DailyHealthPoint>) {
     val values = points.map { if (metric == 0) it.sleepHours else it.averageHeartRate }
     val chartValues = values.map { it ?: Double.NaN }
     val hasRecords = values.any { it != null }
-    val labels = points.map { it.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).take(1) }
+    val labels = points.map { it.date.dayOfWeek.name.take(1) }
 
     SurfaceCard {
         Row(verticalAlignment = Alignment.CenterVertically) {

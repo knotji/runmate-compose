@@ -6,7 +6,7 @@ WholeMate is a personal health companion built toward a Compose Multiplatform ar
 
 ## Repository status
 
-The current implementation is an Android Jetpack Compose host with Health Connect and Supabase authentication. Compose Multiplatform is the canonical architecture, but physical `commonMain`/`iosMain` source sets have not yet been introduced. See the migration milestones in [ROADMAP.md](docs/ROADMAP.md).
+The repository now has a real `:shared` Kotlin Multiplatform module with Android and Web/Wasm targets. Health facts, Body Picture policy/models, personal baselines, load-state semantics, tests, and the Today playground UI live in `commonMain`. The production-capable host remains Android; Web is a development playground only. No iOS target exists yet.
 
 ## Product questions
 
@@ -54,6 +54,30 @@ Without the experimental property:
 ```powershell
 .\gradlew.bat assembleDebug
 ```
+
+## Web development playground
+
+The Web target is for fast shared-UI iteration. It uses `DemoHealthProvider` fixtures only and never presents itself as Health Connect or production health data.
+
+Run the development server and open the browser:
+
+```powershell
+.\gradlew.bat :shared:wasmJsBrowserDevelopmentRun
+```
+
+Build the static Web distribution:
+
+```powershell
+.\gradlew.bat :shared:wasmJsBrowserDistribution
+```
+
+The production bundle is written to:
+
+```text
+shared/build/dist/wasmJs/productionExecutable
+```
+
+The playground includes deterministic `available`, `partial`, `missing`, `loading`, and `error` fixtures. It has no Supabase authentication, Health Connect emulation, recovery calculation, or production deployment contract. A browser with WasmGC support is required.
 
 ## Firebase App Distribution
 

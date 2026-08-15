@@ -1,15 +1,10 @@
 package com.runmate.compose.health
 
-import java.time.Duration
-import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.Instant
 
 enum class EvidenceClass {
-    MEASURED,
-    CALCULATED,
-    USER_REPORTED,
-    OBSERVED_PATTERN,
-    AI_INTERPRETATION,
-    MISSING,
+    MEASURED, CALCULATED, USER_REPORTED, OBSERVED_PATTERN, AI_INTERPRETATION, MISSING,
 }
 
 enum class Freshness { FRESH, STALE }
@@ -24,8 +19,7 @@ sealed interface HealthFact {
     val observedAt: Instant
     val source: HealthSource
     val freshness: Freshness
-    val evidenceClass: EvidenceClass
-        get() = EvidenceClass.MEASURED
+    val evidenceClass: EvidenceClass get() = EvidenceClass.MEASURED
 }
 
 data class SleepFact(
@@ -37,8 +31,8 @@ data class SleepFact(
 ) : HealthFact {
     override val observedAt: Instant = end
     init {
-        require(!duration.isNegative) { "Sleep duration cannot be negative" }
-        require(!end.isBefore(start)) { "Sleep end must not precede start" }
+        require(!duration.isNegative()) { "Sleep duration cannot be negative" }
+        require(end >= start) { "Sleep end must not precede start" }
     }
 }
 
@@ -80,8 +74,8 @@ data class ActivityFact(
 ) : HealthFact {
     override val observedAt: Instant = end
     init {
-        require(!duration.isNegative) { "Activity duration cannot be negative" }
-        require(!end.isBefore(start)) { "Activity end must not precede start" }
+        require(!duration.isNegative()) { "Activity duration cannot be negative" }
+        require(end >= start) { "Activity end must not precede start" }
     }
 }
 
@@ -95,9 +89,9 @@ data class StepsFact(
     override val observedAt: Instant = end
     init {
         require(count >= 0) { "Step count cannot be negative" }
-        require(!end.isBefore(start)) { "Steps end must not precede start" }
+        require(end >= start) { "Steps end must not precede start" }
     }
 }
 
-internal fun freshness(observedAt: Instant, assessedAt: Instant, maximumAge: Duration): Freshness =
-    if (observedAt.isBefore(assessedAt.minus(maximumAge))) Freshness.STALE else Freshness.FRESH
+fun assessFreshness(observedAt: Instant, assessedAt: Instant, maximumAge: Duration): Freshness =
+    if (observedAt < assessedAt - maximumAge) Freshness.STALE else Freshness.FRESH

@@ -16,6 +16,9 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.datetime.LocalDate as KotlinLocalDate
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Instant as KotlinInstant
 
 data class HealthDashboardData(
     val sleep: SleepSummary?,
@@ -27,12 +30,6 @@ data class HealthDashboardData(
     val sevenDayTrend: List<DailyHealthPoint>,
     val facts: List<HealthFact>,
     val syncedAt: Instant,
-)
-
-data class DailyHealthPoint(
-    val date: LocalDate,
-    val sleepHours: Double?,
-    val averageHeartRate: Double?,
 )
 
 sealed interface HealthLoadResult {
@@ -126,22 +123,22 @@ class HealthDashboardRepository(private val context: Context) {
         assessedAt: Instant,
     ): List<HealthFact> = buildList {
         sleep?.let {
-            add(SleepFact(it.duration, it.startedAt, it.endedAt, source(it.origin), freshness(it.endedAt, assessedAt, Duration.ofHours(36))))
+            add(SleepFact(it.duration.toMillis().milliseconds, it.startedAt.toSharedInstant(), it.endedAt.toSharedInstant(), source(it.origin), assessFreshness(it.endedAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
         }
         heartRate?.let {
-            add(HeartRateFact(it.beatsPerMinute, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(24))))
+            add(HeartRateFact(it.beatsPerMinute, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(24).toMillis().milliseconds)))
         }
         hrv?.let {
-            add(HrvFact(it.rmssdMillis, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(36))))
+            add(HrvFact(it.rmssdMillis, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
         }
         respiratoryRate?.let {
-            add(RespiratoryRateFact(it.breathsPerMinute, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(36))))
+            add(RespiratoryRateFact(it.breathsPerMinute, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
         }
         activity?.let {
-            add(ActivityFact(it.typeCode, it.title, it.duration, it.startedAt, it.endedAt, source(it.origin), freshness(it.endedAt, assessedAt, Duration.ofDays(2))))
+            add(ActivityFact(it.typeCode, it.title, it.duration.toMillis().milliseconds, it.startedAt.toSharedInstant(), it.endedAt.toSharedInstant(), source(it.origin), assessFreshness(it.endedAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofDays(2).toMillis().milliseconds)))
         }
         steps?.let {
-            add(StepsFact(it.count, it.startedAt, it.endedAt, HealthSource("health_connect_aggregate"), Freshness.FRESH))
+            add(StepsFact(it.count, it.startedAt.toSharedInstant(), it.endedAt.toSharedInstant(), HealthSource("health_connect_aggregate"), Freshness.FRESH))
         }
     }
 
@@ -165,7 +162,7 @@ class HealthDashboardRepository(private val context: Context) {
             val sleepMinutes = sleepByDate[date]?.sumOf { Duration.between(it.startTime, it.endTime).toMinutes() }
             val heartSamples = heartSamplesByDate[date].orEmpty()
             DailyHealthPoint(
-                date = date,
+                date = KotlinLocalDate(date.year, date.monthValue, date.dayOfMonth),
                 sleepHours = sleepMinutes?.div(60.0),
                 averageHeartRate = heartSamples.takeIf { it.isNotEmpty() }?.map { it.beatsPerMinute.toDouble() }?.average(),
             )
@@ -179,5 +176,7 @@ class HealthDashboardRepository(private val context: Context) {
         }.getOrDefault(packageName)
         return SignalOrigin(packageName, label)
     }
+
+    private fun Instant.toSharedInstant(): KotlinInstant = KotlinInstant.fromEpochMilliseconds(toEpochMilli())
 
 }

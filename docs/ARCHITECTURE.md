@@ -2,7 +2,7 @@
 
 ## Canonical direction
 
-WholeMate is a Compose Multiplatform product architecture with an Android implementation currently in service. The repository has not completed the source-set migration yet: today it contains an Android application module and Android `main` sources. New product logic must nevertheless be shaped for extraction to shared Kotlin rather than deepening Android coupling.
+WholeMate is a Compose Multiplatform product architecture with an Android implementation currently in service and a Web/Wasm development playground. The `:shared` module now contains real `commonMain`, `commonTest`, Android, and Wasm source sets. Web is not a production platform.
 
 ```text
 WholeMate
@@ -12,12 +12,15 @@ WholeMate
 │   ├── use cases
 │   ├── state
 │   ├── presentation models
-│   └── design system
+│   ├── shared Today playground UI
+│   └── explicitly development-only demo fixtures
 ├── androidMain
 │   ├── Health Connect
 │   ├── Android secure storage
 │   ├── Firebase / platform services
 │   └── Android-specific integrations
+├── wasmJsMain
+│   └── browser entry point
 └── iosMain (when enabled)
     ├── HealthKit
     ├── Keychain
@@ -50,14 +53,16 @@ Platform SDKs remain behind adapters
 
 ## Current implementation and migration boundary
 
-The current `:app` module is the Android host. Existing Android code remains valid while capabilities are moved incrementally; a documentation reset does not pretend that `commonMain` or iOS code already exists.
+The current `:app` module is the Android host. The `:shared` module owns deterministic health facts, provenance/freshness/absence semantics, Body Picture policy/models, personal baselines, load state, shared tests, and the browser playground UI. Health Connect repository mapping, permissions, lifecycle, OAuth, secure storage, and Android navigation remain in `:app`.
+
+The Web target uses `DemoHealthProvider` only. Its UI must visibly identify demo data and may not mimic Health Connect authorization, claim real measurements, add Web-specific recovery behavior, or become a separate Web product roadmap.
 
 Migration order:
 
-1. Introduce shared domain and data contracts with no Android types.
-2. Move deterministic baselines, use cases, and presentation models to shared Kotlin.
-3. Keep Health Connect and Android secure storage in Android source sets behind interfaces.
-4. Move app state and design tokens when their platform lifecycle behavior is defined.
+1. Continue moving deterministic use cases and platform-neutral presentation logic only after their contracts stabilize.
+2. Keep Health Connect, Android secure storage, permissions, OAuth, and lifecycle in the Android host.
+3. Use Web fixtures to iterate shared UI states without inventing provider behavior.
+4. Move additional state/design tokens only when their platform lifecycle behavior is defined.
 5. Enable an iOS host only after its provider, consent, secure-storage, and device-QA plan is approved.
 
 Do not pause Android product learning while waiting for iOS, and do not label Android-only code as shared by abstraction alone.

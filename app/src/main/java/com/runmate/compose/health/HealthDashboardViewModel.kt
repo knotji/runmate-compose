@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 sealed interface HealthDashboardUiState {
     data class Loading(
@@ -59,8 +60,8 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                             BodyPictureInput(
                                 facts = result.data.facts,
                                 trend = result.data.sevenDayTrend,
-                                effectiveAt = result.data.syncedAt,
-                                zoneId = ZoneId.systemDefault(),
+                                effectiveAt = Instant.fromEpochMilliseconds(result.data.syncedAt.toEpochMilli()),
+                                timeZone = TimeZone.currentSystemDefault(),
                             ),
                         ),
                     )

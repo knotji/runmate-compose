@@ -28,11 +28,14 @@ Missing stays missing. AI is optional to comprehension. Health-provider reads re
 - [x] Initial Recovery, Strain, and Sleep hero without fabricated unavailable scores.
 - [x] Deterministic personal baselines with missing-data rules.
 - [x] Firebase App Distribution and Samsung tester flow.
-- [ ] Kotlin Multiplatform plugin/source sets (`commonMain`, `androidMain`, `iosMain`) exist.
-- [ ] Shared state, use cases, presentation models, and design tokens are extracted from Android code.
+- [x] Kotlin Multiplatform `:shared` module with `commonMain`, `commonTest`, Android, and Web/Wasm targets exists.
+- [x] Health facts, Body Picture policy/models, personal baselines, load state, and their tests are shared.
+- [x] Web Today development playground covers available, partial, missing, loading, and error demo states.
+- [ ] iOS source set/host exists.
+- [ ] Remaining approved shared use cases and design tokens are extracted from Android code.
 - [ ] Physical-device acceptance record covers the current real-data Today flow.
 
-The unchecked CMP items are migration work. Documentation does not claim that the current Android-shaped repository is already physically multiplatform.
+The Web target is development tooling, not a production platform or a substitute for Android device acceptance.
 
 ## Milestone 1 — Canonical contracts and shared seams
 
@@ -54,17 +57,18 @@ Acceptance:
 
 Goal: establish real shared Kotlin without pretending platform APIs are portable.
 
-- Introduce the Kotlin Multiplatform module/source-set layout.
-- Move domain models, deterministic personal baselines, use cases, load-state semantics, presentation models, and platform-neutral design tokens to `commonMain`.
-- Keep Health Connect, Keystore, Android OAuth/deep links, Firebase Android services, and Android lifecycle restoration in `androidMain`.
+- [x] Introduce the Kotlin Multiplatform module/source-set layout.
+- [x] Move health facts, deterministic personal baselines, load-state semantics, Body Picture policy/models, and tests to `commonMain`/`commonTest`.
+- [x] Keep Health Connect, Keystore, Android OAuth/deep links, Firebase Android services, permissions, and Android lifecycle restoration in the Android host.
+- [x] Add a Web/Wasm playground using visibly labeled demo data only.
 - Add architecture checks that prevent Android dependencies from entering common code.
 - Define `iosMain` interfaces/stubs only when they clarify a real boundary; do not fabricate a working HealthKit client.
 
 Acceptance:
 
-- Common tests run independently of Android.
-- Android debug/release builds and existing flows remain green.
-- No platform API is hidden behind a misleading lowest-common-denominator abstraction.
+- [x] Common tests run on Android/JVM and Web/Wasm.
+- [x] Android debug build and existing tests remain green.
+- [x] No platform API is hidden behind a misleading lowest-common-denominator abstraction.
 
 ## Milestone 3 — Useful Today without AI
 
