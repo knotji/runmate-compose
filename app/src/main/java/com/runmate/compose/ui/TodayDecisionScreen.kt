@@ -67,6 +67,9 @@ import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
 import com.runmate.compose.health.BaselineResult
 import com.runmate.compose.health.PersonalBaseline
+import com.runmate.compose.today.FocusGoal
+import com.runmate.compose.today.TodayUserState
+import com.runmate.compose.today.TodayViewModel
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -83,7 +86,7 @@ private val Night = Color(0xFF071C31)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
+fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?, todayViewModel: TodayViewModel? = null) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
         ?: HealthDashboardUiState.Unavailable
     val content = when (state) {
@@ -93,6 +96,7 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
         else -> null
     }
     val refreshing = state is HealthDashboardUiState.Loading
+    val userState = todayViewModel?.state?.collectAsStateWithLifecycle()?.value ?: TodayUserState()
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) {
         viewModel?.refresh()
@@ -123,10 +127,30 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
                     },
                 )
             }
+            item { FocusGoalCard(userState.focus, onSelect = { todayViewModel?.selectFocus(it) }) }
             if (content != null) {
                 item { LatestSignalsCard(content) }
                 item { PersonalBaselineCard(content.sevenDayTrend) }
+                item {
+                    MindBodyCheckInCard(
+                        state = userState,
+                        onStress = { todayViewModel?.setStress(it) },
+                        onMood = { todayViewModel?.setMood(it) },
+                        onEnergy = { todayViewModel?.setEnergy(it) },
+                        onSave = { todayViewModel?.saveCheckIn() },
+                    )
+                }
                 item { SevenDayChart(content.sevenDayTrend) }
+            } else {
+                item {
+                    MindBodyCheckInCard(
+                        state = userState,
+                        onStress = { todayViewModel?.setStress(it) },
+                        onMood = { todayViewModel?.setMood(it) },
+                        onEnergy = { todayViewModel?.setEnergy(it) },
+                        onSave = { todayViewModel?.saveCheckIn() },
+                    )
+                }
             }
             item {
                 Text(
@@ -137,6 +161,78 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FocusGoalCard(selected: FocusGoal, onSelect: (FocusGoal) -> Unit) = SurfaceCard {
+    Text("TODAY'S FOCUS  •  USER SELECTED", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    Text("What matters most today?", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+    Text("Focus changes priority only. It never changes measured health records.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
+    FocusGoal.entries.chunked(3).forEach { goals ->
+        Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            goals.forEach { goal ->
+                Button(
+                    onClick = { onSelect(goal) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selected == goal) Ocean else Color(0xFFE8F0F5),
+                        contentColor = if (selected == goal) Color.White else Muted,
+                    ),
+                    contentPadding = PaddingValues(horizontal = 5.dp, vertical = 9.dp),
+                ) { Text(goal.label, fontSize = 10.sp, maxLines = 1) }
+            }
+            repeat(3 - goals.size) { Spacer(Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun MindBodyCheckInCard(
+    state: TodayUserState,
+    onStress: (Int) -> Unit,
+    onMood: (Int) -> Unit,
+    onEnergy: (Int) -> Unit,
+    onSave: () -> Unit,
+) = SurfaceCard {
+    Text("MIND + BODY  •  USER REPORTED", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    Text("How do you feel right now?", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+    Text("Optional 1–5 check-in. These values are not inferred from Health Connect.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
+    RatingRow("Stress", "low", "high", state.stress, onStress)
+    RatingRow("Mood", "low", "high", state.mood, onMood)
+    RatingRow("Energy", "low", "high", state.energy, onEnergy)
+    val hasValue = listOf(state.stress, state.mood, state.energy).any { it != null }
+    Button(
+        onClick = onSave,
+        enabled = hasValue,
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Ocean),
+    ) { Text(if (state.checkInSavedAt == null) "Save check-in" else "Check-in saved", fontWeight = FontWeight.Bold) }
+    state.checkInSavedAt?.let {
+        Text("Saved ${HealthDisplayFormatter.time(it)} • kept in app saved state", color = Muted, fontSize = 9.sp, modifier = Modifier.padding(top = 7.dp))
+    }
+}
+
+@Composable
+private fun RatingRow(label: String, low: String, high: String, selected: Int?, onSelect: (Int) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Row(Modifier.fillMaxWidth()) {
+            Text(label, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("$low  →  $high", color = Muted, fontSize = 9.sp)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            (1..5).forEach { value ->
+                Button(
+                    onClick = { onSelect(value) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selected == value) Ocean else Color(0xFFE8F0F5),
+                        contentColor = if (selected == value) Color.White else Muted,
+                    ),
+                    contentPadding = PaddingValues(0.dp),
+                ) { Text(value.toString(), fontWeight = FontWeight.Bold) }
             }
         }
     }

@@ -58,6 +58,7 @@ Goal: make Today useful without pretending that a recovery decision exists.
 - Improve seven-day chart accessibility, selection, and empty-day behavior.
 - Add a visible last-sync timestamp and manual refresh result.
 - [x] Add neutral Sleep and Heart Rate personal-baseline comparisons with minimum-data rules.
+- [x] Add SavedState-backed daily focus and optional Stress, Mood, and Energy check-in.
 
 Acceptance:
 
