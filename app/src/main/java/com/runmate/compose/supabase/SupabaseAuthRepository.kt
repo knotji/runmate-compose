@@ -30,6 +30,20 @@ sealed interface ProfileResult {
     data class Failure(val message: String) : ProfileResult
 }
 
+data class HistorySummary(
+    val id: String,
+    val type: String,
+    val title: String,
+    val detail: String,
+    val dateKey: String,
+    val source: String,
+)
+
+sealed interface HistoryResult {
+    data class Success(val items: List<HistorySummary>) : HistoryResult
+    data class Failure(val message: String) : HistoryResult
+}
+
 class SupabaseAuthRepository(private val config: SupabaseConfig) {
     data class OAuthRequest(val url: String, val verifier: String)
 
@@ -83,6 +97,28 @@ class SupabaseAuthRepository(private val config: SupabaseConfig) {
             else -> ProfileResult.Failure("Profile returned HTTP ${response.code}")
         }
     }.getOrElse { ProfileResult.Failure("Could not load profile") }
+
+    fun loadHistory(session: StoredSession, limit: Int = 30, offset: Int = 0): HistoryResult = runCatching {
+        val id = URLEncoder.encode(session.userId, Charsets.UTF_8.name())
+        val safeLimit = limit.coerceIn(1, 100)
+        val safeOffset = offset.coerceAtLeast(0)
+        val path = "/rest/v1/history_items?user_id=eq.$id&select=id,type,created_at,data&order=created_at.desc&limit=$safeLimit&offset=$safeOffset"
+        val response = request("GET", path, session.accessToken)
+        when (response.code) {
+            in 200..299 -> {
+                val rows = JSONArray(response.body)
+                val items = buildList {
+                    for (index in 0 until rows.length()) {
+                        historyFromJson(rows.getJSONObject(index))?.let(::add)
+                    }
+                }.distinctBy(HistorySummary::id)
+                HistoryResult.Success(items)
+            }
+            401 -> HistoryResult.Failure("Session expired")
+            403 -> HistoryResult.Failure("History access was denied by RLS")
+            else -> HistoryResult.Failure("History returned HTTP ${response.code}")
+        }
+    }.getOrElse { HistoryResult.Failure("Could not load history") }
 
     fun signOut(accessToken: String) {
         runCatching { request("POST", "/auth/v1/logout", accessToken, JSONObject()) }
@@ -139,6 +175,36 @@ class SupabaseAuthRepository(private val config: SupabaseConfig) {
         language = row.nullableString("language"),
         updatedAt = row.nullableString("updated_at"),
     )
+
+    private fun historyFromJson(row: JSONObject): HistorySummary? {
+        val data = row.optJSONObject("data") ?: JSONObject()
+        if (data.optBoolean("hiddenFromRunMate", false)) return null
+        val extracted = data.optJSONObject("extracted") ?: JSONObject()
+        val source = data.optJSONObject("source")?.optString("provider")?.takeIf(String::isNotBlank)
+            ?.replace('_', ' ')?.replaceFirstChar(Char::uppercase) ?: "RunMate"
+        val type = row.optString("type", "health")
+        val createdAt = row.optString("created_at")
+        val dateKey = data.optString("dateKey").takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
+            ?: data.optString("recordedAt").take(10).takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
+            ?: createdAt.take(10)
+        val title = when (type) {
+            "sleep" -> extracted.optString("sleepDuration").takeIf(String::isNotBlank) ?: "Sleep record"
+            "workout", "strength" -> extracted.optString("workoutKind").takeIf(String::isNotBlank)?.replace('_', ' ') ?: if (type == "strength") "Strength training" else "Workout"
+            "meal" -> data.optString("mealType").takeIf(String::isNotBlank)?.replaceFirstChar(Char::uppercase) ?: "Meal"
+            "body" -> extracted.optDouble("weightKg", Double.NaN).takeIf(Double::isFinite)?.let { "%.1f kg".format(it) } ?: "Body record"
+            else -> type.replace('_', ' ').replaceFirstChar(Char::uppercase)
+        }
+        val detail = when (type) {
+            "sleep" -> "Sleep session recorded"
+            "workout", "strength" -> listOfNotNull(
+                extracted.optDouble("distanceKm", Double.NaN).takeIf(Double::isFinite)?.let { "%.1f km".format(it) },
+                extracted.optDouble("avgHR", Double.NaN).takeIf(Double::isFinite)?.let { "${it.toInt()} bpm" },
+            ).joinToString(" • ").ifBlank { "Training session recorded" }
+            "meal" -> data.optJSONObject("nutrition")?.optDouble("caloriesKcal", Double.NaN)?.takeIf(Double::isFinite)?.let { "${it.toInt()} kcal" } ?: "Meal recorded"
+            else -> "Health record"
+        }
+        return HistorySummary(row.getString("id"), type, title, detail, dateKey, source)
+    }
 
     companion object { const val OAUTH_CALLBACK = "com.wholemate.app://auth/callback" }
 }

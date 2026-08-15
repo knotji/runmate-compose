@@ -60,6 +60,8 @@ class SupabaseConnectionViewModel(application: Application) : AndroidViewModel(a
     val state: StateFlow<SupabaseConnectionState> = mutableState.asStateFlow()
     private val mutableAccountState = MutableStateFlow<AccountState>(AccountState.Restoring)
     val accountState: StateFlow<AccountState> = mutableAccountState.asStateFlow()
+    private val mutableHistoryState = MutableStateFlow<HistoryState>(HistoryState.Idle)
+    val historyState: StateFlow<HistoryState> = mutableHistoryState.asStateFlow()
 
     init {
         restoreSession()
@@ -127,12 +129,25 @@ class SupabaseConnectionViewModel(application: Application) : AndroidViewModel(a
         val session = (mutableAccountState.value as? AccountState.SignedIn)?.session
         sessionVault.clear()
         mutableAccountState.value = AccountState.SignedOut()
+        mutableHistoryState.value = HistoryState.Idle
         if (session != null) viewModelScope.launch(Dispatchers.IO) { authRepository.signOut(session.accessToken) }
     }
 
     fun retryProfile() {
         val session = (mutableAccountState.value as? AccountState.SignedIn)?.session ?: sessionVault.load() ?: return
         viewModelScope.launch { loadProfile(session) }
+    }
+
+    fun refreshHistory() {
+        val session = (mutableAccountState.value as? AccountState.SignedIn)?.session ?: return
+        viewModelScope.launch { loadHistory(session, reset = true) }
+    }
+
+    fun loadMoreHistory() {
+        val session = (mutableAccountState.value as? AccountState.SignedIn)?.session ?: return
+        val current = mutableHistoryState.value as? HistoryState.Content ?: return
+        if (!current.hasMore) return
+        viewModelScope.launch { loadHistory(session, reset = false) }
     }
 
     private fun restoreSession() {
@@ -162,7 +177,24 @@ class SupabaseConnectionViewModel(application: Application) : AndroidViewModel(a
             is ProfileResult.Success -> AccountState.SignedIn(session, result.profile)
             is ProfileResult.Failure -> AccountState.SignedIn(session, null, result.message)
         }
+        loadHistory(session, reset = true)
     }
+
+    private suspend fun loadHistory(session: StoredSession, reset: Boolean) {
+        val previous = if (reset) emptyList() else (mutableHistoryState.value as? HistoryState.Content)?.items.orEmpty()
+        mutableHistoryState.value = HistoryState.Loading(previous)
+        mutableHistoryState.value = when (val result = withContext(Dispatchers.IO) { authRepository.loadHistory(session, limit = 30, offset = previous.size) }) {
+            is HistoryResult.Success -> HistoryState.Content((previous + result.items).distinctBy(HistorySummary::id), result.items.size == 30)
+            is HistoryResult.Failure -> HistoryState.Error(result.message, previous)
+        }
+    }
+}
+
+sealed interface HistoryState {
+    data object Idle : HistoryState
+    data class Loading(val previous: List<HistorySummary>) : HistoryState
+    data class Content(val items: List<HistorySummary>, val hasMore: Boolean) : HistoryState
+    data class Error(val message: String, val previous: List<HistorySummary>) : HistoryState
 }
 
 fun shouldRefreshSession(expiresAtEpochSeconds: Long, nowEpochSeconds: Long): Boolean =

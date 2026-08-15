@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -79,6 +80,8 @@ import com.runmate.compose.state.RunMateAppStore
 import com.runmate.compose.supabase.SupabaseConnectionState
 import com.runmate.compose.supabase.SupabaseConnectionViewModel
 import com.runmate.compose.supabase.AccountState
+import com.runmate.compose.supabase.HistoryState
+import com.runmate.compose.supabase.HistorySummary
 
 private val Ink = Color(0xFF142A46)
 private val Muted = Color(0xFF667A91)
@@ -137,7 +140,7 @@ fun NativeHealthApp(
                 when (selectedTab) {
                     0 -> TodayDecisionScreen(viewModel)
                     1 -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
-                    2 -> MoveScreen(viewModel)
+                    2 -> MoveScreen(viewModel, supabaseViewModel)
                     else -> CoachScreen(supabaseViewModel)
                 }
             }
@@ -173,8 +176,9 @@ private fun LabNavigation(selected: Int, onSelect: (Int) -> Unit) {
 }
 
 @Composable
-private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
+private fun MoveScreen(viewModel: HealthDashboardViewModel?, supabaseViewModel: SupabaseConnectionViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
+    val historyState = supabaseViewModel?.historyState?.collectAsStateWithLifecycle()?.value ?: HistoryState.Idle
     LaunchedEffect(viewModel) { viewModel?.refresh() }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -202,7 +206,39 @@ private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
             HealthDashboardUiState.Unavailable -> item { DarkHealthCard("Health Connect", "Unavailable on this device") }
             else -> item { LoadingState() }
         }
+        item { SectionHeading("RUNMATE HISTORY", "Recent Daily Records") }
+        val historyItems = when (historyState) {
+            is HistoryState.Content -> historyState.items
+            is HistoryState.Loading -> historyState.previous
+            is HistoryState.Error -> historyState.previous
+            HistoryState.Idle -> emptyList()
+        }
+        if (historyItems.isEmpty()) {
+            when (historyState) {
+                is HistoryState.Loading -> item { LoadingState() }
+                is HistoryState.Error -> item { DarkHealthCard("History unavailable", historyState.message) }
+                else -> item { DarkHealthCard("No recent records", "No authorized RunMate history was returned") }
+            }
+        } else {
+            items(historyItems.size, key = { historyItems[it].id }) { index -> HistoryEntry(historyItems[index]) }
+            if (historyState is HistoryState.Error) item { DarkHealthCard("Refresh issue", historyState.message) }
+            item { Button(onClick = { supabaseViewModel?.refreshHistory() }, modifier = Modifier.fillMaxWidth()) { Text("Refresh history") } }
+            if (historyState is HistoryState.Content && historyState.hasMore) {
+                item { Button(onClick = { supabaseViewModel?.loadMoreHistory() }, modifier = Modifier.fillMaxWidth()) { Text("Load more") } }
+            }
+        }
     }
+}
+
+@Composable
+private fun HistoryEntry(item: HistorySummary) {
+    val icon = when (item.type) {
+        "sleep" -> Icons.Rounded.NightsStay
+        "meal" -> Icons.Rounded.Restaurant
+        "workout", "strength" -> Icons.AutoMirrored.Rounded.DirectionsRun
+        else -> Icons.Rounded.Favorite
+    }
+    HubEntry(icon, item.title, "${item.detail} • ${item.dateKey}", item.source.uppercase())
 }
 
 @Composable

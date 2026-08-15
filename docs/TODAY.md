@@ -8,7 +8,7 @@ Today is intentionally short: date, measured-status badge, one body-picture hero
 
 ## Information order
 
-1. At-a-glance body picture: three rings for today's Sleep, Heart, and measured signal coverage, with neutral baseline deltas.
+1. At-a-glance body picture: Recovery, Strain, and Sleep. Sleep may use a measured Health Connect value; Recovery and Strain remain visibly unavailable until approved shared results exist.
 2. Health Connect permission and refresh action when attention is required.
 3. A clear route to Health for records, baselines, and trends.
 
@@ -17,7 +17,7 @@ Today is intentionally short: date, measured-status badge, one body-picture hero
 - The first loaded hero must answer what is available today without requiring scroll.
 - Sleep and Heart tiles use today's seven-day-trend record, never an older 30-day latest value.
 - Baseline deltas remain neutral numeric differences and are marked `VS BASE`.
-- The three rings are visual grouping, not three scores. Sleep and Heart arcs do not encode progress or health quality; the Signals ring states measured coverage explicitly.
+- The rings preserve the established RunMate mental model. An unavailable Recovery or Strain ring shows `--` and `NOT CONNECTED`; Compose never derives either score locally.
 - Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
 - The hero explicitly states that AI interpretation is not active.
 

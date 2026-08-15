@@ -243,30 +243,27 @@ private fun HealthStatusHero(
 @Composable
 private fun BodySnapshotRow(data: HealthDashboardData) {
     val sleepToday = data.sevenDayTrend.lastOrNull()?.sleepHours
-    val heartToday = data.sevenDayTrend.lastOrNull()?.averageHeartRate
     val sleepBaseline = PersonalBaseline.sleep(data.sevenDayTrend)
-    val heartBaseline = PersonalBaseline.heartRate(data.sevenDayTrend)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SnapshotRing(
+            label = "RECOVERY",
+            value = "--",
+            context = "NOT CONNECTED",
+            color = Color(0xFF75E6A4),
+            modifier = Modifier.weight(1f),
+        )
+        SnapshotRing(
+            label = "STRAIN",
+            value = "--",
+            context = "NOT CONNECTED",
+            color = Gold,
+            modifier = Modifier.weight(1f),
+        )
         SnapshotRing(
             label = "SLEEP",
             value = sleepToday?.let { "%.1fh".format(it) } ?: "--",
             context = baselineContext(sleepBaseline, "h", 1),
             color = Cyan,
-            modifier = Modifier.weight(1f),
-        )
-        SnapshotRing(
-            label = "HEART",
-            value = heartToday?.let { "${it.toInt()} bpm" } ?: "--",
-            context = baselineContext(heartBaseline, "bpm", 0),
-            color = Gold,
-            modifier = Modifier.weight(1f),
-        )
-        val available = listOf(data.sleep, data.heartRate, data.hrv, data.respiratoryRate, data.latestActivity, data.stepsToday).count { it != null }
-        SnapshotRing(
-            label = "SIGNALS",
-            value = "$available/6",
-            context = "MEASURED",
-            color = Color(0xFFB7D8FF),
             modifier = Modifier.weight(1f),
         )
     }
@@ -287,7 +284,7 @@ private fun SnapshotRing(label: String, value: String, context: String, color: C
         Box(Modifier.size(86.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 drawCircle(Color.White.copy(.12f), style = Stroke(width = 13f))
-                drawArc(color, -90f, 300f, false, style = Stroke(width = 13f, cap = StrokeCap.Round))
+                if (value != "--") drawArc(color, -90f, 300f, false, style = Stroke(width = 13f, cap = StrokeCap.Round))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, maxLines = 1)
