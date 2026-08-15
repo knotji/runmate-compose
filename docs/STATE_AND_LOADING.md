@@ -7,7 +7,7 @@ State has one owner at each lifetime:
 | Lifetime | Owner | Examples |
 |---|---|---|
 | Process/session | `RunMateAppStore` | selected destination, authenticated account when added |
-| Screen | screen ViewModel | Health query state, Today focus/check-in, recovery snapshot state |
+| Screen | screen ViewModel | Health query state and recovery snapshot state |
 | Transient UI | `rememberSaveable` | selected chart metric and point |
 | Durable server | Supabase through a repository | profile and account-backed product data |
 | Device health | Health Connect through a repository | sleep, heart rate, workout records |

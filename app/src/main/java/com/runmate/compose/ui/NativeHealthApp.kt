@@ -67,7 +67,6 @@ import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
 import com.runmate.compose.state.AppDestination
 import com.runmate.compose.state.RunMateAppStore
-import com.runmate.compose.today.TodayViewModel
 
 private val Ink = Color(0xFF142A46)
 private val Muted = Color(0xFF667A91)
@@ -85,7 +84,6 @@ fun NativeHealthApp(
     experimentEnabled: Boolean,
     viewModel: HealthDashboardViewModel? = null,
     appStore: RunMateAppStore? = null,
-    todayViewModel: TodayViewModel? = null,
 ) {
     MaterialTheme {
         if (!experimentEnabled) {
@@ -106,7 +104,7 @@ fun NativeHealthApp(
         ) { padding ->
             Box(Modifier.padding(padding).fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> TodayDecisionScreen(viewModel, todayViewModel)
+                    0 -> TodayDecisionScreen(viewModel)
                     else -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
                 }
             }

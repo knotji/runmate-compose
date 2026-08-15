@@ -6,20 +6,18 @@ Today is the health-first home of WholeMate. It presents the minimum complete pi
 
 ## Information order
 
-1. At-a-glance body picture: today's measured Sleep and Heart values, neutral baseline deltas, Mind check-in status, data availability, and selected focus.
+1. At-a-glance body picture: three rings for today's Sleep, Heart, and measured signal coverage, with neutral baseline deltas.
 2. Health Connect permission and refresh action when attention is required.
-3. User-selected focus for the day.
-4. Latest measured Sleep, Heart Rate, HRV, Respiratory Rate, and Activity records with source and sync time.
-5. Deterministic personal-baseline comparisons when sufficient history exists.
-6. Optional user-reported Stress, Mood, and Energy check-in.
-7. Seven-day measured chart.
+3. Latest measured Sleep, Heart Rate, HRV, Respiratory Rate, and Activity records with source and sync time.
+4. Deterministic personal-baseline comparisons when sufficient history exists.
+5. Seven-day measured chart.
 
 ## At-a-glance body picture
 
 - The first loaded hero must answer what is available today without requiring scroll.
 - Sleep and Heart tiles use today's seven-day-trend record, never an older 30-day latest value.
 - Baseline deltas remain neutral numeric differences and are marked `VS BASE`.
-- Mind displays only a user-entered Stress value; it never infers stress from heart or sleep records.
+- The three rings are visual grouping, not three scores. Sleep and Heart arcs do not encode progress or health quality; the Signals ring states measured coverage explicitly.
 - Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
 - The hero explicitly states that AI interpretation is not active.
 
@@ -33,19 +31,9 @@ Today is the health-first home of WholeMate. It presents the minimum complete pi
 
 Today contains no AI interpretation, recovery score, diagnosis, or training recommendation in this milestone.
 
-## Daily focus
+## Interaction budget
 
-Available focus domains are Balance, Sleep, Stress, Heart Health, and Movement. Selecting a focus changes future prioritization only. It must not modify, hide, rescale, or reinterpret measured records.
-
-## Mind and body check-in
-
-- Stress, Mood, and Energy are independently optional values on a 1–5 scale.
-- Scale direction is stated in the UI.
-- Values are explicitly labelled `User reported`.
-- Editing a value clears the previous saved timestamp until the user saves again.
-- At least one value is required to save.
-- The current implementation uses Android saved state and contains no free-text note, cloud sync, or Gemini call.
-- Durable sensitive storage requires a separate encrypted-storage and retention decision.
+Today is primarily a reading surface. It must not present goal selection, stress/mood/energy questionnaires, or repeated setup choices in the main scroll. Future check-ins belong to a deliberate secondary flow with clear value and privacy handling.
 
 ## Completion criteria
 
