@@ -22,6 +22,20 @@ Today is intentionally short: date, evidence-status badge, one Body Picture hero
 - Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
 - Deterministic facts remain comprehensible when AI interpretation is unavailable.
 
+## Evidence and presentation boundary
+
+```text
+Platform provider records -> HealthFact -> BodyPicturePolicy -> BodyPictureModel -> UI
+```
+
+- `HealthFact` is typed deterministic evidence, not a UI dictionary. It contains observation time, source, freshness, and a domain-specific value.
+- Provider SDK records stop before `HealthFact`; Android Today never imports or interprets Health Connect record types.
+- `BodyPicturePolicy` decides which signals belong today. `BodyPictureModel` only describes the selected picture.
+- The UI renders the ordered signal list. Reordering or replacing a signal does not require changing the composable.
+- `AIInterpretation` remains an output classification but is not a `HealthFact` implementation.
+
+Absence is typed rather than represented by a nullable number alone: `Available`, `Missing`, `NotPermitted`, `NotSupported`, `NotConnected`, `Stale`, and `InsufficientData`. Each state preserves its distinct product meaning and maps to explicit copy; no state receives a fallback metric.
+
 ## Evidence classes
 
 - `Measured`: Health Connect records.

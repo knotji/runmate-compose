@@ -25,6 +25,7 @@ data class HealthDashboardData(
     val latestActivity: ActivitySummary?,
     val stepsToday: DailyStepsSummary?,
     val sevenDayTrend: List<DailyHealthPoint>,
+    val facts: List<HealthFact>,
     val syncedAt: Instant,
 )
 
@@ -83,28 +84,72 @@ class HealthDashboardRepository(private val context: Context) {
             ),
         )[StepsRecord.COUNT_TOTAL]
 
+        val sleepSummary = sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime, origin(it.metadata.dataOrigin.packageName)) }
+        val heartRateSummary = heartRate?.samples?.maxByOrNull { it.time }
+            ?.let { HeartRateSummary(it.beatsPerMinute, it.time, origin(heartRate.metadata.dataOrigin.packageName)) }
+        val hrvSummary = hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time, origin(it.metadata.dataOrigin.packageName)) }
+        val respiratorySummary = respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time, origin(it.metadata.dataOrigin.packageName)) }
+        val activitySummary = latestActivity?.let {
+            ActivitySummary(
+                typeCode = it.exerciseType,
+                title = it.title,
+                duration = Duration.between(it.startTime, it.endTime),
+                startedAt = it.startTime,
+                endedAt = it.endTime,
+                origin = origin(it.metadata.dataOrigin.packageName),
+            )
+        }
+        val stepsSummary = stepsTotal?.let { DailyStepsSummary(it, startOfToday, now) }
+        val trend = buildSevenDayTrend(sleepRecords, heartRateRecords)
         return HealthLoadResult.Success(
             HealthDashboardData(
-                sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime, origin(it.metadata.dataOrigin.packageName)) },
-                heartRate?.samples?.maxByOrNull { it.time }?.let { HeartRateSummary(it.beatsPerMinute, it.time, origin(heartRate.metadata.dataOrigin.packageName)) },
-                hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time, origin(it.metadata.dataOrigin.packageName)) },
-                respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time, origin(it.metadata.dataOrigin.packageName)) },
-                latestActivity?.let {
-                    ActivitySummary(
-                        typeCode = it.exerciseType,
-                        title = it.title,
-                        duration = Duration.between(it.startTime, it.endTime),
-                        startedAt = it.startTime,
-                        endedAt = it.endTime,
-                        origin = origin(it.metadata.dataOrigin.packageName),
-                    )
-                },
-                stepsTotal?.let { DailyStepsSummary(it, startOfToday, now) },
-                buildSevenDayTrend(sleepRecords, heartRateRecords),
+                sleepSummary,
+                heartRateSummary,
+                hrvSummary,
+                respiratorySummary,
+                activitySummary,
+                stepsSummary,
+                trend,
+                facts = buildFacts(sleepSummary, heartRateSummary, hrvSummary, respiratorySummary, activitySummary, stepsSummary, now),
                 syncedAt = now,
             ),
         )
     }
+
+    private fun buildFacts(
+        sleep: SleepSummary?,
+        heartRate: HeartRateSummary?,
+        hrv: HrvSummary?,
+        respiratoryRate: RespiratoryRateSummary?,
+        activity: ActivitySummary?,
+        steps: DailyStepsSummary?,
+        assessedAt: Instant,
+    ): List<HealthFact> = buildList {
+        sleep?.let {
+            add(SleepFact(it.duration, it.startedAt, it.endedAt, source(it.origin), freshness(it.endedAt, assessedAt, Duration.ofHours(36))))
+        }
+        heartRate?.let {
+            add(HeartRateFact(it.beatsPerMinute, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(24))))
+        }
+        hrv?.let {
+            add(HrvFact(it.rmssdMillis, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(36))))
+        }
+        respiratoryRate?.let {
+            add(RespiratoryRateFact(it.breathsPerMinute, it.measuredAt, source(it.origin), freshness(it.measuredAt, assessedAt, Duration.ofHours(36))))
+        }
+        activity?.let {
+            add(ActivityFact(it.typeCode, it.title, it.duration, it.startedAt, it.endedAt, source(it.origin), freshness(it.endedAt, assessedAt, Duration.ofDays(2))))
+        }
+        steps?.let {
+            add(StepsFact(it.count, it.startedAt, it.endedAt, HealthSource("health_connect_aggregate"), Freshness.FRESH))
+        }
+    }
+
+    private fun source(origin: SignalOrigin?): HealthSource = HealthSource(
+        provider = "health_connect",
+        originId = origin?.packageName,
+        originLabel = origin?.appLabel,
+    )
 
     private fun buildSevenDayTrend(
         sleepRecords: List<SleepSessionRecord>,

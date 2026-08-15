@@ -39,16 +39,16 @@ The unchecked CMP items are migration work. Documentation does not claim that th
 Goal: stop adding Android coupling to product logic.
 
 - [x] Reset product, architecture, Today, state, recovery, provider, and UI contracts to WholeMate + CMP terminology.
-- Define provider-neutral typed health facts with provenance, freshness, quality, consent state, and explicit absence.
+- [x] Define provider-neutral typed health facts with provenance, freshness, and explicit absence.
 - Define `SessionVault`, health-provider, recovery-provider, and owner-history interfaces without platform SDK types.
-- Define an adaptive `BodyPictureModel` containing three or four typed signal presentations.
-- Keep the first signal selection `Recovery / Strain / Sleep` while removing semantic dependence on fixed UI slots.
+- [x] Define an adaptive `BodyPictureModel` containing three or four typed signal presentations.
+- [x] Keep the first signal selection `Recovery / Strain / Sleep` while removing semantic dependence on fixed UI slots.
 
 Acceptance:
 
-- Shared contracts import no Android or Health Connect types.
-- The current Android UI renders the same honest values through those contracts.
-- Tests cover missing, partial, stale, timezone, and provider-capability differences.
+- [x] Shared contracts import no Android or Health Connect types.
+- [x] The current Android UI renders the same honest values through those contracts.
+- [x] Tests cover missing, partial, stale, timezone, ordering, permission, and provider-identity differences.
 
 ## Milestone 2 — CMP source-set migration
 
@@ -157,4 +157,4 @@ An iOS client is enabled work when justified, not forbidden work and not a claim
 
 ## Next executable slice
 
-Create a provider-neutral `BodyPictureModel` and health-fact contract, adapt the existing Android repositories/UI to it, and test missing/partial/freshness behavior. This establishes the first extraction seam before introducing CMP source sets.
+Extract the provider-neutral health facts, Body Picture policy/model, personal baselines, and their tests into a real Kotlin Multiplatform shared source set. Keep Health Connect mapping and Android presentation/lifecycle code in the Android host.

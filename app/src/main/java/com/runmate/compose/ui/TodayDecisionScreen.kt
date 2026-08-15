@@ -65,6 +65,10 @@ import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
+import com.runmate.compose.health.BodyPictureModel
+import com.runmate.compose.health.BodyPictureSignal
+import com.runmate.compose.health.BodyPictureSignalId
+import com.runmate.compose.health.SignalAvailability
 import com.runmate.compose.health.BaselineResult
 import com.runmate.compose.health.PersonalBaseline
 import androidx.compose.ui.platform.LocalContext
@@ -92,6 +96,12 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
         is HealthDashboardUiState.Error -> state.previous
         else -> null
     }
+    val bodyPicture = when (state) {
+        is HealthDashboardUiState.Content -> state.bodyPicture
+        is HealthDashboardUiState.Loading -> state.previousBodyPicture
+        is HealthDashboardUiState.Error -> state.previousBodyPicture
+        else -> null
+    }
     val refreshing = state is HealthDashboardUiState.Loading
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) {
@@ -115,6 +125,7 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
                 HealthStatusHero(
                     state = state,
                     data = content,
+                    bodyPicture = bodyPicture,
                     onRefresh = { viewModel?.refresh() },
                     onPermission = {
                         val missing = (state as? HealthDashboardUiState.PermissionRequired)?.missing
@@ -168,6 +179,7 @@ private fun StatusBadge(text: String, positive: Boolean) {
 private fun HealthStatusHero(
     state: HealthDashboardUiState,
     data: HealthDashboardData?,
+    bodyPicture: BodyPictureModel?,
     onRefresh: () -> Unit,
     onPermission: () -> Unit,
 ) {
@@ -222,7 +234,7 @@ private fun HealthStatusHero(
             }
             Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
             if (data != null) {
-                BodySnapshotRow(data)
+                if (bodyPicture != null) BodySnapshotRow(bodyPicture)
                 Text("Measured and calculated facts only • no AI interpretation", color = Color.White.copy(.58f), fontSize = 9.sp)
             }
             if (state is HealthDashboardUiState.PermissionRequired) {
@@ -241,41 +253,41 @@ private fun HealthStatusHero(
 }
 
 @Composable
-private fun BodySnapshotRow(data: HealthDashboardData) {
-    val sleepToday = data.sevenDayTrend.lastOrNull()?.sleepHours
-    val sleepBaseline = PersonalBaseline.sleep(data.sevenDayTrend)
+private fun BodySnapshotRow(model: BodyPictureModel) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SnapshotRing(
-            label = "RECOVERY",
-            value = "--",
-            context = "NOT CONNECTED",
-            color = Color(0xFF75E6A4),
-            modifier = Modifier.weight(1f),
-        )
-        SnapshotRing(
-            label = "STRAIN",
-            value = "--",
-            context = "NOT CONNECTED",
-            color = Gold,
-            modifier = Modifier.weight(1f),
-        )
-        SnapshotRing(
-            label = "SLEEP",
-            value = sleepToday?.let { "%.1fh".format(it) } ?: "--",
-            context = baselineContext(sleepBaseline, "h", 1),
-            color = Cyan,
-            modifier = Modifier.weight(1f),
-        )
+        model.signals.forEach { signal ->
+            SnapshotRing(
+                label = signal.label.uppercase(Locale.ENGLISH),
+                value = signal.displayValue(),
+                context = signal.contextLabel(),
+                color = signalColor(signal.id),
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
-private fun baselineContext(result: BaselineResult, unit: String, decimals: Int): String = when (result) {
-    is BaselineResult.Available -> {
-        val delta = result.comparison.difference
-        val value = if (decimals == 0) delta.toInt().toString() else "%.1f".format(delta)
-        "${if (delta > 0) "+" else ""}$value$unit VS BASE"
-    }
-    is BaselineResult.InsufficientData -> "NO BASELINE"
+private fun BodyPictureSignal.displayValue(): String = value?.let { "$it${unit.orEmpty()}" } ?: "--"
+
+private fun BodyPictureSignal.contextLabel(): String = when (state) {
+    SignalAvailability.AVAILABLE -> baselineDelta?.let {
+        val delta = it.difference
+        "${if (delta > 0) "+" else ""}${"%.1f".format(delta)}${it.unit} VS BASE"
+    } ?: "NO BASELINE"
+    SignalAvailability.MISSING -> "NO DATA"
+    SignalAvailability.NOT_PERMITTED -> "NOT PERMITTED"
+    SignalAvailability.NOT_SUPPORTED -> "NOT SUPPORTED"
+    SignalAvailability.NOT_CONNECTED -> "NOT CONNECTED"
+    SignalAvailability.STALE -> "STALE"
+    SignalAvailability.INSUFFICIENT_DATA -> "INSUFFICIENT DATA"
+}
+
+private fun signalColor(id: BodyPictureSignalId): Color = when (id) {
+    BodyPictureSignalId.RECOVERY -> Color(0xFF75E6A4)
+    BodyPictureSignalId.STRAIN, BodyPictureSignalId.MOVEMENT -> Gold
+    BodyPictureSignalId.SLEEP -> Cyan
+    BodyPictureSignalId.RESTING_HEART_RATE -> Color(0xFFFF9BAA)
+    BodyPictureSignalId.STRESS -> Color(0xFFC7B8FF)
 }
 
 @Composable
