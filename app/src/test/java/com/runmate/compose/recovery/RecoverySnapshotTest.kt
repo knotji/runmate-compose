@@ -10,9 +10,10 @@ class RecoverySnapshotTest {
 
     @Test fun rejectsOutOfRangeAndStaleSnapshot() {
         val snapshot = RecoverySnapshot(
-            contractVersion = 1,
+            contractVersion = 2,
             modelVersion = "whoop_style_v1",
-            date = today.minusDays(1),
+            effectiveLocalDate = today.minusDays(1),
+            calculationTimeZone = "Asia/Bangkok",
             calculatedAt = Instant.parse("2026-08-14T23:00:00Z"),
             state = RecoveryScoreState.SCORED,
             recoveryScore = 120,
@@ -27,5 +28,26 @@ class RecoverySnapshotTest {
         val errors = snapshot.validate(today)
         assertTrue(errors.any { it.contains("not for today") })
         assertTrue(errors.any { it.contains("0..100") })
+    }
+
+    @Test fun requiresCalculationTimeZone() {
+        val snapshot = RecoverySnapshot(
+            contractVersion = 2,
+            modelVersion = "runmate_recovery_v1",
+            effectiveLocalDate = today,
+            calculationTimeZone = "",
+            calculatedAt = Instant.parse("2026-08-15T00:00:00Z"),
+            state = RecoveryScoreState.PENDING,
+            recoveryScore = null,
+            strainScore = null,
+            sleepScore = null,
+            energyReserve = null,
+            headline = "Waiting for data",
+            reasons = emptyList(),
+            usedSignals = emptyList(),
+            missingSignals = listOf("sleep"),
+        )
+
+        assertTrue(snapshot.validate(today).any { it.contains("time zone") })
     }
 }

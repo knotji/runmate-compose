@@ -18,7 +18,8 @@ data class RecoveryReason(
 data class RecoverySnapshot(
     val contractVersion: Int,
     val modelVersion: String,
-    val date: LocalDate,
+    val effectiveLocalDate: LocalDate,
+    val calculationTimeZone: String,
     val calculatedAt: Instant,
     val state: RecoveryScoreState,
     val recoveryScore: Int?,
@@ -33,7 +34,8 @@ data class RecoverySnapshot(
     fun validate(today: LocalDate): List<String> = buildList {
         if (contractVersion != CURRENT_CONTRACT_VERSION) add("Unsupported recovery contract version")
         if (modelVersion.isBlank()) add("Recovery model version is required")
-        if (date != today) add("Recovery snapshot is not for today")
+        if (calculationTimeZone.isBlank()) add("Recovery calculation time zone is required")
+        if (effectiveLocalDate != today) add("Recovery snapshot is not for today")
         if (recoveryScore != null && recoveryScore !in 0..100) add("Recovery score must be 0..100")
         if (strainScore != null && strainScore !in 0.0..21.0) add("Strain score must be 0..21")
         if (sleepScore != null && sleepScore !in 0..100) add("Sleep score must be 0..100")
@@ -41,7 +43,7 @@ data class RecoverySnapshot(
         if (state == RecoveryScoreState.SCORED && recoveryScore == null) add("Scored recovery requires a score")
     }
 
-    companion object { const val CURRENT_CONTRACT_VERSION = 1 }
+    companion object { const val CURRENT_CONTRACT_VERSION = 2 }
 }
 
 sealed interface RecoverySnapshotState {

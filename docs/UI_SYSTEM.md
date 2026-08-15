@@ -4,10 +4,10 @@ This file is the implementation contract for visual work. A screen change is inc
 
 ## Primary tab hierarchy
 
-- Today stays glanceable: one body picture and no long diagnostic list.
+- Today stays glanceable: one adaptive Body Picture and no long diagnostic list.
 - Health follows Overview, Trends, Body, and Data Sources.
 - Move follows Tools, measured activity, and later daily records.
-- Coach follows Context, Topics, and later Conversation.
+- Coach is the interpretation/action layer and may use Context, Topics, Actions, Reflection, and later Conversation.
 - A card must say `MEASURED`, `CONNECTED`, `NOT CONNECTED`, `PLANNED`, or `DISABLED`; unavailable capabilities never receive preview values.
 
 ## Product character
@@ -16,7 +16,7 @@ WholeMate is calm, precise, supportive, and human. It must not look clinical, ga
 
 All top-level surfaces, including Login and every primary tab, use one light health canvas with white cards, navy typography, and teal primary actions. Dark color is reserved for bounded hero accents, never a whole-tab theme.
 
-The existing RunMate mobile visual language is an approved baseline: pale health canvas, teal gradient hero, three circular metrics, high-radius white cards, compact uppercase evidence labels, and stable bottom navigation. Compose may refine accessibility and performance while retaining this familiarity.
+The existing RunMate mobile visual language is an approved baseline: pale health canvas, teal gradient hero, circular metrics, high-radius white cards, compact uppercase evidence labels, and stable bottom navigation. The Body Picture may render three or four typed signals; labels and meaning are not hard-coded into the visual component.
 
 ## Logo and launcher
 
@@ -62,7 +62,7 @@ Rules:
 - Muted `#667A91`: secondary text; never use for critical facts below accessible contrast.
 - Canvas `#F3F8FC`: Today background.
 - Ocean `#197C9B`: primary action and selected navigation.
-- Dark canvas `#101A17`: Health diagnostic background.
+- Diagnostic dark `#101A17`: bounded developer/diagnostic surfaces only; never a primary-tab canvas.
 - Green `#75E6A4`: connected/success, not a recovery judgment by itself.
 - Gold `#FFD26F`: attention/preview, not an error.
 - Measured badge: green-tinted surface. Derived preview badge: gold-tinted surface.
@@ -80,6 +80,6 @@ No score color may be the only carrier of meaning; pair it with a label and expl
 ## Measured versus derived UI
 
 - `Measured`: directly read from Health Connect or another identified source.
-- `Derived`: produced by the versioned RunMate model.
+- `Derived`: produced by an identified, versioned deterministic model.
 - `Preview`: mock or experimental output; it must never masquerade as measured data.
 - `Unavailable`: honest missing state. Never synthesize HRV or respiratory rate from insufficient inputs.

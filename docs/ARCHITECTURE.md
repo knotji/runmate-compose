@@ -1,78 +1,84 @@
-# Architecture
+# WholeMate Architecture
 
-## Goal
+## Canonical direction
 
-RunMate Compose is an isolated Android-first client experiment. It may read production-compatible data, but it must not silently become a second recovery engine or introduce production persistence.
-
-## Product axis: health first
-
-The application is organized around understanding personal health over time. Running is an activity signal inside that system, not the root navigation or the default explanation for every metric.
-
-- Today summarizes measured health availability and freshness.
-- Health owns sleep, cardiovascular, respiratory, recovery-source, and trend capabilities.
-- Activities may include running, walking, cycling, strength, and other Health Connect exercise types.
-- A future recommendation must be derived from approved health and activity contracts; the UI must not assume the user is a runner.
-- Navigation and naming should remain useful on a day with no run or workout.
-
-## Greenfield implementation boundary
-
-WholeMate is not a source-code port of `runmate-mobile`, but the existing product may be used as an approved UX and visual baseline. Capabilities are still implemented incrementally inside this repository.
-
-- Reproduce proven information architecture, visual rhythm, navigation patterns, and interaction behavior when doing so reduces user relearning.
-- Do not copy components, stores, CSS, TypeScript business logic, or project structure from `runmate-mobile`; implement the approved behavior natively in Compose.
-- Use `runmate-mobile` to understand verified user behavior, visual baselines, existing data contracts, compatibility constraints, and baseline results.
-- Reuse an asset only when it is an approved shared brand asset, such as the RunMate launcher logo, and record its origin.
-- Integrate through explicit versioned contracts rather than translating implementation details between languages.
-- A capability enters Compose only when its own scope, states, tests, and device acceptance criteria are defined.
-- Screen-level UX parity is allowed when explicitly useful, but health-first hierarchy takes precedence over pixel parity.
-
-## Layers
+WholeMate is a Compose Multiplatform product architecture with an Android implementation currently in service. The repository has not completed the source-set migration yet: today it contains an Android application module and Android `main` sources. New product logic must nevertheless be shaped for extraction to shared Kotlin rather than deepening Android coupling.
 
 ```text
-Compose UI
-  -> screen events
-App store / screen ViewModels
-  -> use-case and refresh coordination
-Repositories / providers
-  -> Health Connect, future Supabase auth/data, RecoverySnapshot provider
-Android platform
+WholeMate
+├── commonMain
+│   ├── domain
+│   ├── data contracts
+│   ├── use cases
+│   ├── state
+│   ├── presentation models
+│   └── design system
+├── androidMain
+│   ├── Health Connect
+│   ├── Android secure storage
+│   ├── Firebase / platform services
+│   └── Android-specific integrations
+└── iosMain (when enabled)
+    ├── HealthKit
+    ├── Keychain
+    └── iOS platform services
 ```
 
-Dependencies point inward. SDK types stop at repository boundaries.
+> **Share product logic, not platform APIs.**
 
-## Current modules
+Do not distort Health Connect or HealthKit into a lowest-common-denominator API. Platform adapters produce shared domain facts and explicit capability/quality metadata; shared code owns product decisions, state, presentation models, and deterministic rules.
 
-- `core/state`: reusable load-state semantics.
-- `core/performance`: payload-free timing instrumentation.
-- `state`: four-destination Today, Health, Move, and Coach navigation state.
-- `supabase`: public-client configuration and a read-only project reachability check. It has no auth, table reads, or writes.
-- `health`: typed Sleep, Heart Rate, HRV, Respiratory Rate, and generic Activity models plus direct read-only Health Connect mapping. Display strings are produced outside the repository.
-- `recovery`: versioned cross-client contract; the provider is intentionally unconfigured.
-- `ui`: Today decision screen and Health diagnostics.
+## Product boundary
+
+WholeMate is not a health-data dashboard. Architecture must support the daily loop `Observe -> Understand -> Decide -> Act -> Reflect -> Learn` and the three primary questions in `PRODUCT_CONCEPT.md`.
+
+Running is an activity signal, not the navigation root. A screen or data source is not promoted merely because a platform API exists.
+
+## Dependency direction
+
+```text
+Platform UI -> shared presentation/state -> shared use cases/domain
+Platform adapters ---------------------> shared provider contracts
+Platform SDKs remain behind adapters
+```
+
+- Composables render immutable presentation models and send events.
+- Shared product logic depends on interfaces and domain values, never Android SDK types.
+- Android adapters own Health Connect, Keystore, intents, Firebase Android services, and lifecycle details.
+- Future iOS adapters own HealthKit, Keychain, and iOS lifecycle details.
+- Data provenance, freshness, consent, and missingness cross the adapter boundary explicitly.
+
+## Current implementation and migration boundary
+
+The current `:app` module is the Android host. Existing Android code remains valid while capabilities are moved incrementally; a documentation reset does not pretend that `commonMain` or iOS code already exists.
+
+Migration order:
+
+1. Introduce shared domain and data contracts with no Android types.
+2. Move deterministic baselines, use cases, and presentation models to shared Kotlin.
+3. Keep Health Connect and Android secure storage in Android source sets behind interfaces.
+4. Move app state and design tokens when their platform lifecycle behavior is defined.
+5. Enable an iOS host only after its provider, consent, secure-storage, and device-QA plan is approved.
+
+Do not pause Android product learning while waiting for iOS, and do not label Android-only code as shared by abstraction alone.
+
+## Greenfield and compatibility boundary
+
+WholeMate is not a source-code port of `runmate-mobile`. Proven information architecture and interactions may be reproduced to reduce relearning, but components, CSS, TypeScript stores, and business logic are not mechanically translated.
+
+Compatibility enters through explicit, versioned contracts. `RunMateRecoverySystem` remains the current production source while compatibility matters; it is not the permanent WholeMate recovery ontology.
 
 ## Security and privacy
 
-- `google-services.json`, `local.properties`, tokens, signing files, and environment files remain untracked.
-- Health data stays on device in the current Lab.
-- No health values are logged.
-- Future Supabase access uses the public anon key plus authenticated Row Level Security; no service-role key belongs in the app.
-- Authentication tokens must use encrypted platform storage, not plain preferences.
+- Secrets, tokens, signing files, `google-services.json`, and local configuration stay untracked.
+- Health values never enter logs or analytics payloads.
+- Mobile clients use only public/publishable Supabase credentials with authenticated RLS.
+- `SessionVault` is a shared interface: Android uses Keystore-backed encryption; iOS uses Keychain when implemented.
+- Provider permissions remain platform-native, purpose-bound, and revocable.
 
-## Supabase/auth next slice
+## Repository and release discipline
 
-The foundation accepts a local project URL and publishable key and checks the REST endpoint without reading a table. Auth is intentionally not wired because no shared RecoverySnapshot source exists yet and production credentials must not be copied from another checkout. The implementation sequence is:
-
-1. verify the local public URL/publishable-key connection;
-2. approve identity and existing table contracts;
-3. add an auth repository and encrypted session storage;
-4. implement login/restore/logout states in `RunMateAppStore`;
-5. read only existing authorized data;
-6. keep RecoverySnapshot unavailable until an approved provider exists.
-
-## Git and release discipline
-
-- `main` is releasable Lab infrastructure; work branches use `agent/<description>`.
-- Every functional change updates relevant contracts and tests.
-- Firebase builds are experiments, not production RunMate releases.
-- `nativeHealthDashboard` remains false by default.
-- Release notes must identify the real providers used and explicitly call out any unavailable product output.
+- Documentation, code, and tests change together when a contract changes.
+- Firebase Android builds prove the Android host only; they do not prove CMP portability or iOS behavior.
+- Database migrations, health writes, and new production recovery providers require separate authorization.
+- Release notes identify real providers and unavailable outputs honestly.

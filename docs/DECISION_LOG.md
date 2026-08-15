@@ -1,33 +1,47 @@
 # Decision Log
 
+Entries are append-only decisions. A superseding entry wins; older entries remain historical context.
+
+## 2026-08-15 - WholeMate product constitution
+
+WholeMate helps a person understand how they are today, what is shaping that state, and what they can do next. Health data is evidence, not the product. Every primary experience must answer at least one of those questions and participate in the daily loop `Observe -> Understand -> Decide -> Act -> Reflect -> Learn`.
+
+## 2026-08-15 - Compose Multiplatform is the canonical architecture
+
+**Supersedes: Android-only Compose Lab.** Share domain logic, data contracts, use cases, state, presentation models, and design-system semantics in Kotlin Multiplatform where practical. Keep Health Connect, Android secure storage, Firebase Android services, and lifecycle implementation on Android. HealthKit, Keychain, and iOS services belong to a future iOS host when enabled.
+
+The current repository is still physically an Android application module; CMP source-set migration is incremental and must be reported honestly.
+
+## 2026-08-15 - Body Picture is adaptive
+
+The familiar three-ring hero remains an approved initial presentation, currently `Recovery / Strain / Sleep`. Those labels are not permanent WholeMate ontology. The Body Picture selects three or four useful signals from available evidence and the person's goals through typed presentation models.
+
+## 2026-08-15 - AI is optional to comprehension
+
+Deterministic facts, provenance, freshness, baselines, and missingness must remain useful without Gemini. AI may connect the dots and support decisions, but it never supplies measurements or makes the base product comprehensible.
+
+## 2026-08-15 - RunMate compatibility is transitional
+
+`RunMateRecoverySystem` is the current production source and `RecoverySnapshot` is its compatibility read model. Do not duplicate the engine while cross-client compatibility matters. A future WholeMate recovery model may supersede it through an explicit, versioned, evaluated decision.
+
 ## 2026-08-15 - RunMate UX baseline with health-first hierarchy
 
-Use `runmate-mobile` as an approved visual and interaction baseline, including the familiar three-dial Today hero, card rhythm, pull-to-refresh, and the conceptual `Today / Health / Move / Coach` navigation. Reimplement behavior in Compose rather than copying Ionic/CSS/state code. WholeMate changes the hierarchy: Health is the product axis, Move is one capability, and Coach must reason from evidence across body and mind rather than defaulting to running plans.
+Use `runmate-mobile` as an approved visual and interaction baseline. Reimplement behavior rather than copying Ionic/CSS/state code. Today, Health, Move, and Coach retain their navigation, with Coach defined as the interpretation/action layer rather than only chat.
 
 ## 2026-08-15 - WholeMate working product name
 
-Use **WholeMate** as the working user-facing name for the health-first experiment. It represents whole-body and mind support while retaining the companion meaning of “Mate.” Keep the existing package, Firebase app, repository, and internal identifiers until formal brand clearance and a planned identity migration.
+Use **WholeMate** as the user-facing working name. Technical identifiers migrate only through coordinated plans. The registered OAuth callback `com.wholemate.app://auth/callback` is the current integration source of truth.
 
-## 2026-08-15 - Health-first product axis
+## 2026-08-15 - Health Connect remains the Android health provider
 
-Compose is designed as a personal health application rather than a running application with health cards. Running remains an activity type. Today, navigation, data ownership, and future recommendations must make sense across sleep, cardiovascular, respiratory, recovery, and multiple activity types.
-
-## 2026-08-15 - Greenfield capability slices
-
-Do not copy or mechanically port `runmate-mobile` into this repository. Build one independently testable Compose capability at a time. The existing application may supply behavioral baselines and data-contract compatibility requirements, but not implementation structure or business-logic duplication. Approved shared brand assets are the only default exception.
-
-## 2026-08-15 - Android-only Compose Lab
-
-Use Jetpack Compose rather than Flutter for the first experiment because RunMate is currently Android/Samsung/Health Connect heavy and already owns Kotlin native integrations. This does not decide the future iOS strategy.
-
-## 2026-08-15 - Health Connect remains the primary health provider
-
-Use AndroidX Health Connect directly and read records only. Samsung Health Data SDK may be evaluated as an optional Samsung-specific provider, but it does not replace Health Connect and does not expose public HRV or respiratory-rate types needed by this experiment.
-
-## 2026-08-15 - No duplicate recovery engine
-
-Production recovery is TypeScript client logic. Compose defines a versioned `RecoverySnapshot` consumer contract but keeps its provider unconfigured until a shared source is explicitly approved.
+Use AndroidX Health Connect directly and read records only. Samsung Health Data SDK may be evaluated as an optional Samsung-specific provider but does not replace Health Connect by default.
 
 ## 2026-08-15 - No mock health or decision output
 
-Today renders only records returned by Health Connect. When data is absent, it shows an explicit empty, permission, unavailable, loading, or error state. Recovery, Strain, Energy, training guidance, and fallback chart values remain absent until an approved real provider exists.
+Missing stays missing. Never fabricate Recovery, Strain, Energy, training guidance, chart values, HRV, respiratory rate, or other measurements to complete UI.
+
+## Superseded historical decision
+
+### 2026-08-15 - Android-only Compose Lab
+
+Originally selected Jetpack Compose for a Samsung/Health Connect experiment. Superseded by the Compose Multiplatform architecture decision above; retained only to explain the repository's current Android-shaped implementation.

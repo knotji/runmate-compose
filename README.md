@@ -1,62 +1,67 @@
 # WholeMate
 
-An isolated, greenfield Android health companion experiment, formerly the RunMate Compose Lab. WholeMate explores whole-body and mental wellbeing without copying, replacing, or modifying `runmate-mobile`.
+> **Understand today → understand why → decide what next.**
 
-## Engineering contracts
+WholeMate is a personal health companion built toward a Compose Multiplatform architecture. It uses measured health evidence, personal baselines, goals, and explicit user context to create a useful daily picture. It is not an “everything health” dashboard, and it never invents measurements or scores to fill the interface.
 
+## Repository status
+
+The current implementation is an Android Jetpack Compose host with Health Connect and Supabase authentication. Compose Multiplatform is the canonical architecture, but physical `commonMain`/`iosMain` source sets have not yet been introduced. See the migration milestones in [ROADMAP.md](docs/ROADMAP.md).
+
+## Product questions
+
+Every primary experience must help answer at least one:
+
+1. How am I today?
+2. What is shaping this?
+3. What should I do next?
+
+The product loop is `Observe → Understand → Decide → Act → Reflect → Learn`. AI may connect the dots but is optional to comprehension.
+
+## Canonical contracts
+
+- [Product constitution](docs/PRODUCT_CONCEPT.md)
 - [Architecture](docs/ARCHITECTURE.md)
-- [Product concept](docs/PRODUCT_CONCEPT.md)
-- [Personal baseline](docs/PERSONAL_BASELINE.md)
-- [Today experience](docs/TODAY.md)
-- [Health data catalog](docs/HEALTH_DATA_CATALOG.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Decision log](docs/DECISION_LOG.md)
+- [Today / Body Picture](docs/TODAY.md)
 - [UI system](docs/UI_SYSTEM.md)
 - [State and loading](docs/STATE_AND_LOADING.md)
-- [Recovery contract](docs/RECOVERY_CONTRACT.md)
+- [Supabase](docs/SUPABASE.md)
+- [Recovery compatibility](docs/RECOVERY_CONTRACT.md)
+- [Personal baseline](docs/PERSONAL_BASELINE.md)
+- [Health capability catalog](docs/HEALTH_DATA_CATALOG.md)
 - [Performance](docs/PERFORMANCE.md)
-- [Decision log](docs/DECISION_LOG.md)
 
-These documents are part of the implementation contract. Changes to layout tokens, loading behavior, state ownership, recovery semantics, or performance targets must update the matching document and tests in the same change.
+These documents are implementation contracts. Behavior changes update the matching document and tests together.
 
-## Experiment question
+## Current boundaries
 
-Does a native Compose health surface feel better and make Health Connect state easier to maintain enough to justify a second UI stack?
+- Health Connect is an Android platform adapter and remains read-only.
+- Recovery consumes a versioned compatibility result; it is not recalculated locally.
+- Missing data stays missing, and deterministic facts remain useful without Gemini.
+- Supabase uses authenticated owner-scoped reads; there are no database migrations or production health writes.
+- Secrets, `google-services.json`, signing material, and local configuration remain untracked.
 
-## Guardrails
-
-- Read-only Health Connect access.
-- Recovery is consumed from existing RunMate output; it is not recalculated here.
-- No database migrations, production writes, unrelated refactors, or cleanup.
-- The native dashboard is disabled by default.
-
-## Run
+## Android build
 
 ```powershell
 .\gradlew.bat assembleDebug -PnativeHealthDashboard=true
 ```
 
-Without the property, the application builds with the experiment disabled:
+Without the experimental property:
 
 ```powershell
 .\gradlew.bat assembleDebug
 ```
 
-## PoC definition of done
-
-1. Capture the Ionic baseline on the target Samsung device.
-2. Open the native dashboard from Ionic.
-3. Show Health Connect permission/state and real sleep, heart-rate, and workout data.
-4. Support refresh plus loading, empty, and error states.
-5. Return to Ionic with its state intact.
-6. Pass tests and debug/release builds.
-
-The current Lab reads Health Connect data directly. Today shows only records returned by Health Connect; it does not render fallback chart values, mock recovery/strain/energy scores, or generated training guidance. `RecoverySnapshot` remains the boundary for a future shared provider without duplicating the production engine.
-
 ## Firebase App Distribution
 
-Keep `app/google-services.json` local; it is ignored by Git. To build an experiment-enabled APK with a fresh version code and upload it to the matching Compose Lab Firebase app:
+Keep `app/google-services.json` local. To build and upload the Android test APK:
 
 ```powershell
 $env:RUNMATE_COMPOSE_TESTERS = 'tester@example.com'
-.\scripts\distribute-debug.ps1 -ReleaseNotes 'Compose Health Connect data read.'
+.\scripts\distribute-debug.ps1 -ReleaseNotes 'WholeMate Android test build.'
 ```
+
+An Android distribution validates only the Android host; it is not evidence that iOS or CMP migration is complete.

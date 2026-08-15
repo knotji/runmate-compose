@@ -2,7 +2,7 @@
 
 ## Budgets
 
-These are initial Samsung-device budgets and must be replaced with measured baselines before production promotion.
+These are initial Android/Samsung budgets and must be replaced with measured baselines before production promotion. Each future platform host defines and measures equivalent budgets on representative hardware; Android results are not evidence of iOS performance.
 
 | Interaction | Target |
 |---|---:|
@@ -15,7 +15,7 @@ These are initial Samsung-device budgets and must be replaced with measured base
 
 ## Rules
 
-- Health Connect and Supabase access run off the rendering path.
+- Platform health-provider and Supabase access run off the rendering path.
 - Query only fields and time ranges needed by the screen.
 - Keep previous data visible during refresh.
 - Avoid allocating formatters, brushes, and large collections per animation frame.
@@ -30,11 +30,11 @@ These are initial Samsung-device budgets and must be replaced with measured base
 
 Before production consideration, add:
 
-- Macrobenchmark startup and frame-timing tests;
+- Android Macrobenchmark startup and frame-timing tests;
 - Baseline Profiles for Today and Health navigation;
 - release-build measurements on the target Samsung device;
 - Compose recomposition inspection for the Today hero and chart;
 - APK size tracking;
 - cold/warm Health Connect query timing with record counts but no values.
 
-Debug performance is diagnostic only. Decisions must use a release-like build without debugger overhead.
+Debug performance is diagnostic only. Decisions must use release-like builds without debugger overhead. Shared logic benchmarks complement but never replace host-level startup, frame, lifecycle, and provider measurements.

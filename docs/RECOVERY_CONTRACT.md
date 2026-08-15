@@ -1,17 +1,19 @@
 # Recovery Contract and Logic Boundary
 
-## Current production finding
+## Compatibility source
 
 `runmate-mobile` computes `RunMateRecoverySystem` inside the TypeScript client in `src/lib/recoverySystem.ts`. The startup snapshot is stored in browser local storage by `src/lib/recoveryStartupCache.ts`. It is not currently a shared Supabase record or API response.
 
-Therefore this repository must not port or reinterpret the production formula yet. Doing so would create two engines with independent bug fixes and potentially conflicting health guidance.
+`RunMateRecoverySystem` is the legacy/current production source. `RecoverySnapshot` is its compatibility contract. Do not duplicate or reinterpret the engine while cross-client compatibility matters; doing so would create independent bug fixes and conflicting guidance.
 
-## Compose boundary
+This boundary does not make the RunMate formula permanent WholeMate architecture. A future WholeMate recovery model may replace it only through an explicit model-version decision, evaluation, migration plan, and honest user-facing provenance.
+
+## Compatibility boundary
 
 `RecoverySnapshot` is the minimum versioned read model Compose may consume. It includes:
 
 - contract and model versions;
-- Bangkok-date identity and calculation timestamp;
+- `effectiveLocalDate`, `calculationTimeZone`, and calculation timestamp;
 - score state;
 - optional recovery, strain, sleep, and energy scores;
 - headline and structured reasons;
@@ -24,11 +26,13 @@ Compose rejects a snapshot when:
 
 - its contract version is unsupported;
 - its model identity is blank;
-- its date is not today in the agreed Bangkok calendar contract;
+- its effective local date does not match today in its declared calculation time zone;
 - any score is outside its scale;
 - the state is `SCORED` but the recovery score is missing.
 
 Production integration must additionally validate schema shape, authenticated user ownership, freshness, and server/client clock assumptions.
+
+The RunMate compatibility adapter currently enforces `Asia/Bangkok`. That timezone is adapter behavior, not a global WholeMate invariant.
 
 ## Integration options
 

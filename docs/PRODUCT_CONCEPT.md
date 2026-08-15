@@ -1,104 +1,113 @@
-# WholeMate Product Concept
+# WholeMate Product Constitution
 
-## Working name
+## Canonical product promise
 
-**WholeMate** is a working product name: a companion that helps a person understand the whole body and mind, not only workouts. It requires formal trademark, store, domain, and localization clearance before a production launch.
+> **WholeMate helps you understand how you are today, what is shaping that state, and what you can do next.**
 
-The existing Android package, Firebase application, repository, and internal Kotlin package names remain unchanged during the experiment so the rename does not break installation identity, Health Connect permission history, or distribution. Technical identifiers may be migrated only after the product name is approved.
+WholeMate is a personal health companion. It combines measured health data, personal baselines, goals, and explicit user context into a coherent daily picture.
 
-## Product promise
+Health data is evidence, not the product. WholeMate does not exist to display every metric a provider exposes.
 
-> WholeMate learns from the health signals a person already has, understands their goals and context, and explains what may deserve attention next.
+Every primary experience must help answer at least one question:
 
-WholeMate is health-first. Running is one activity signal. The product remains useful for someone who walks, cycles, lifts, rests, manages stress, improves sleep, or has no workout on a given day.
+1. How am I today?
+2. What is shaping this?
+3. What should I do next?
 
-## Health map
+Running, workouts, sleep, recovery, stress, nutrition, and other health domains are inputs into one whole-person model. No domain is the product identity.
 
-The product organizes goals and evidence into connected domains:
+## Product laws
 
-| Domain | Example measured signals | Example goals |
-|---|---|---|
-| Sleep | duration, timing, consistency, stages when available | sleep longer, stabilize bedtime, wake refreshed |
-| Cardiovascular | heart rate, resting patterns, HRV when available | improve aerobic health, notice unusual change |
-| Respiratory | respiratory rate and trends when available | understand overnight change, support recovery context |
-| Movement | steps, workouts, duration, intensity when available | move consistently, build strength, prepare for an event |
-| Recovery | approved shared recovery facts, fatigue feedback | balance effort and rest, recover from a demanding period |
-| Mind and stress | user check-ins, perceived stress, mood, workload context | reduce stress, protect focus, recognize difficult patterns |
-| Habits and context | sleep routine, alcohol, illness, travel, medication notes when explicitly supplied | learn which behaviors support personal wellbeing |
+1. Evidence before interpretation.
+2. Personal context before population judgment.
+3. Missing stays missing.
+4. Every insight must improve understanding or action.
+5. Whole-person health, not workout-first health.
 
-No domain receives a fabricated score merely to complete the interface.
+When evidence is insufficient, WholeMate says so. It never invents a measurement or score to complete the interface.
 
-## Goal model
+## Daily loop
 
-A goal is not only a target number. Each goal contains:
+```text
+Observe -> Understand -> Decide -> Act -> Reflect -> Learn
+```
 
-- domain and user intent;
-- desired outcome and optional target;
-- time horizon;
-- measured evidence that can support it;
-- user-reported context;
-- confidence and data sufficiency;
-- small actions the user accepts;
-- progress review and feedback.
+The loop is the feature filter:
 
-Goals may influence what WholeMate prioritizes, but must never alter measured records. Conflicting goals—such as increasing training while reducing exhaustion—must be shown as a tradeoff rather than silently optimized.
+- **Observe:** collect an approved measurement or explicit user report.
+- **Understand:** describe what changed, its freshness, and its relationship to personal context.
+- **Decide:** offer a bounded choice or useful question only when evidence supports it.
+- **Act:** let the person choose a small, realistic next step.
+- **Reflect:** ask whether the action helped without judgment or forced streaks.
+- **Learn:** use the result as future personal context, never as fabricated physiology.
+
+Example:
+
+```text
+Sleep 5h 42m + resting HR above personal baseline + reported stress high
+  -> "Your sleep was shorter than usual and resting HR is elevated."
+  -> "Keep today lighter?"
+  -> User chooses an easy day
+  -> Tomorrow: "Did the lighter day help?"
+```
+
+A proposed capability that cannot identify its place in this loop is not ready for the primary product experience.
+
+## Body Picture
+
+The Today hero presents the three or four signals most useful for this person today. `Recovery / Strain / Sleep` is an approved first configuration and familiar UI pattern, not permanent product ontology.
+
+The selected signals may change as goals, evidence, and approved models evolve—for example `Sleep / Energy / Stress / Movement` or `Recovery / Sleep / Resting HR / Activity`. The component is reusable; its semantics come from typed presentation models and must not be hard-coded into shared product logic.
+
+## Goals and health domains
+
+A goal includes user intent, desired outcome, time horizon, supporting measured evidence, explicit context, confidence/data sufficiency, accepted actions, and reflection. Goals prioritize the Body Picture and Coach; they never alter measured records.
+
+Health domains are a capability map, not a dashboard menu or delivery roadmap. Sleep, cardiovascular, respiratory, movement, recovery, mind/stress, habits, and nutrition enter the product only when they improve a user decision.
+
+Conflicting goals must be shown as tradeoffs rather than silently optimized.
 
 ## AI reasoning contract
 
-Gemini is an interpretation and conversation layer, not a source of physiological measurements.
+Gemini is an optional interpretation and conversation layer, never a source of physiological measurements.
 
 ```text
-Health Connect + explicit user check-ins
+Approved providers + explicit user context
                  ↓
 Typed, timestamped health timeline
                  ↓
-Deterministic facts, baselines, and data-quality checks
+Deterministic facts, baselines, and quality checks
                  ↓
-Gemini interpretation with evidence references
+Optional AI interpretation with evidence references
                  ↓
 Insight, clarifying question, or suggested next action
 ```
 
-Every output is classified:
+Every output is classified as `Measured`, `Calculated`, `Observed pattern`, `AI interpretation`, `User reported`, or `Missing`.
 
-- `Measured`: returned by an approved data provider.
-- `Calculated`: deterministic, versioned, and tested.
-- `Observed pattern`: supported by the user's history and a stated time window.
-- `AI interpretation`: a bounded explanation or hypothesis with confidence.
-- `User reported`: mood, stress, symptoms, or context entered by the user.
-- `Missing`: unavailable; never inferred as a numeric measurement.
+AI is optional to comprehension. Without Gemini, WholeMate must still provide useful deterministic facts such as `Sleep ↓ 1h 12m vs baseline` and `Resting HR ↑ 6 bpm vs baseline`.
 
-Gemini may connect evidence, summarize change, ask a useful question, and personalize language. It may not invent measurements, diagnose a condition, silently convert correlation into causation, or present a medical claim as fact.
+Gemini may connect evidence, summarize change, ask a useful question, and personalize language. It may not invent measurements, diagnose, turn correlation into causation, or present medical claims as fact.
 
-## Today experience
+## Navigation meaning
 
-Today answers in this order:
-
-1. What measured signals are available and how fresh are they?
-2. What changed relative to the person's own baseline?
-3. Which active body or mind goal may be affected?
-4. Is there enough evidence for an insight?
-5. What small next step or question is appropriate?
-
-When evidence is insufficient, the correct answer is `Not enough data yet` plus a useful way to improve context—not a synthetic readiness score.
+- **Today — What matters today?** A short Body Picture and the most relevant next understanding or action.
+- **Health — What is happening in my body over time?** Evidence, trends, provenance, and data quality.
+- **Move — How am I moving and training?** Activity and training as one health domain.
+- **Coach — What does this mean for me and what could I do?** The interpretation/action layer, not merely an AI chat tab.
 
 ## Mental health and stress boundary
 
-- Stress and mood begin as optional user-reported check-ins unless an approved measured provider exists.
-- Language is supportive and non-judgmental; streak loss and alarmist scoring are avoided.
-- High-risk or crisis language must trigger a dedicated safety response and appropriate local help guidance, not ordinary coaching.
+- Stress and mood begin as optional user reports unless an approved measured provider exists.
+- Language is supportive and non-judgmental; avoid alarmist scoring and streak punishment.
+- Crisis language requires a dedicated safety response and local-help guidance, not ordinary coaching.
 - Sensitive notes require explicit consent, minimal retention, deletion controls, and no health values in logs.
-- WholeMate supports reflection and behavior change; it is not a replacement for a clinician or emergency service.
+- WholeMate supports reflection and behavior change; it is not a clinician or emergency service.
 
-## Initial product slices
+## Working identity
 
-1. Health timeline: typed Sleep, Heart Rate, HRV, Respiratory, and Activity events.
-2. Personal baselines: transparent time windows, freshness, and minimum-data rules.
-3. Goals: one body or mind goal with progress evidence and a manual check-in.
-4. Stress check-in: perceived stress, mood, energy, optional note, and privacy controls.
-5. Gemini insight prototype: evidence-bounded summary with citations back to local facts.
-6. Feedback: useful/not useful, what changed, and whether the suggested action was attempted.
+**WholeMate** is the working product name pending trademark, store, domain, and localization clearance. Product naming is canonical even while technical identifiers are migrated deliberately. The currently registered OAuth callback is `com.wholemate.app://auth/callback`; changing it requires coordinated application and Supabase configuration.
 
-## Success criteria
+## Success criterion
 
-WholeMate succeeds when a user can understand a meaningful health change, see the evidence behind it, connect it to a personal goal, and decide what to do next—even without continuous 24-hour sensing.
+WholeMate succeeds when a person can understand a meaningful change, see the evidence and uncertainty behind it, connect it to personal context, and choose what to do next—even without continuous 24-hour sensing or AI availability.

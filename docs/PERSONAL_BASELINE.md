@@ -6,7 +6,7 @@ Personal baselines describe how a measured value differs from the same person's 
 
 ## Initial window
 
-- The UI uses the seven calendar-day Health Connect trend.
+- The initial UI uses a seven-calendar-day measured personal trend from the active platform provider.
 - Today's value is the comparison value and is always excluded from its own baseline.
 - The baseline uses available values from the preceding six calendar days.
 - At least three preceding days are required.

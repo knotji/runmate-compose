@@ -1,8 +1,16 @@
 # Health Data Capability Catalog
 
-## Principle
+## Capability boundary, not roadmap
 
-WholeMate may support the breadth of Health Connect, but it must not request every permission in one blanket prompt. Access is organized into user-visible capability groups with a concrete product use, independent denial handling, and read-only defaults.
+This catalog records what an approved platform provider may expose. It is not a promise to build a dashboard, request every permission, or deliver every listed feature.
+
+Every new capability must pass this sequence before implementation:
+
+```text
+User goal -> why the data matters -> decision improved -> consent requirement -> implementation
+```
+
+Android capabilities currently come from Health Connect. Other platforms may expose different records and quality. Access is organized into user-visible capability groups with a concrete product use, independent denial handling, and read-only defaults.
 
 ## Core health
 
@@ -60,9 +68,11 @@ Personal Health Records use a distinct feature and permission surface. Allergies
 - Keep queries read-only until a write use case is separately approved.
 - Default reads cover the platform's permitted history window; older history requires a separate history permission and explanation.
 
-## Delivery order
+## Candidate evaluation order
 
-1. Core health already in use: Sleep, HR, HRV, Respiratory, Activity.
+Items below are candidates subject to the product gate above, not committed roadmap milestones.
+
+1. Core health already in use on Android: Sleep, HR, HRV, Respiratory, Activity.
 2. Daily movement: Steps aggregate implemented; Distance and Calories aggregates next.
 3. Resting HR, SpO2, Weight, Body Fat, and VO2 max.
 4. Remaining activity/body capabilities behind consent groups.
