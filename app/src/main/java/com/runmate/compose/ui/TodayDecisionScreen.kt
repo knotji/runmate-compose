@@ -1,5 +1,7 @@
 package com.runmate.compose.ui
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -56,11 +58,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.PermissionController
 import com.runmate.compose.health.DailyHealthPoint
 import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
+import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -79,8 +84,17 @@ private val Night = Color(0xFF071C31)
 fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
         ?: HealthDashboardUiState.Unavailable
-    val content = (state as? HealthDashboardUiState.Content)?.data
+    val content = when (state) {
+        is HealthDashboardUiState.Content -> state.data
+        is HealthDashboardUiState.Loading -> state.previous
+        is HealthDashboardUiState.Error -> state.previous
+        else -> null
+    }
     val refreshing = state is HealthDashboardUiState.Loading
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) {
+        viewModel?.refresh()
+    }
 
     LaunchedEffect(viewModel) { viewModel?.refresh() }
 
@@ -95,7 +109,18 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { TodayHeader(content != null) }
-            item { HealthStatusHero(state, onRefresh = { viewModel?.refresh() }) }
+            item {
+                HealthStatusHero(
+                    state = state,
+                    data = content,
+                    onRefresh = { viewModel?.refresh() },
+                    onPermission = {
+                        val missing = (state as? HealthDashboardUiState.PermissionRequired)?.missing
+                        if (missing != null) permissionLauncher.launch(missing)
+                        else runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)) }
+                    },
+                )
+            }
             if (content != null) {
                 item { LatestSignalsCard(content) }
                 item { SevenDayChart(content.sevenDayTrend) }
@@ -142,14 +167,19 @@ private fun StatusBadge(text: String, positive: Boolean) {
 }
 
 @Composable
-private fun HealthStatusHero(state: HealthDashboardUiState, onRefresh: () -> Unit) {
+private fun HealthStatusHero(
+    state: HealthDashboardUiState,
+    data: HealthDashboardData?,
+    onRefresh: () -> Unit,
+    onPermission: () -> Unit,
+) {
     val title: String
     val detail: String
-    val ready = state is HealthDashboardUiState.Content
+    val ready = data != null
     when (state) {
-        HealthDashboardUiState.Loading -> {
-            title = "Reading your signals"
-            detail = "Fetching the latest records from Health Connect."
+        is HealthDashboardUiState.Loading -> {
+            title = if (ready) "Updating your signals" else "Reading your signals"
+            detail = if (ready) "Your previous records remain visible while Health Connect refreshes." else "Fetching the latest records from Health Connect."
         }
         HealthDashboardUiState.Unavailable -> {
             title = "Health Connect unavailable"
@@ -157,15 +187,16 @@ private fun HealthStatusHero(state: HealthDashboardUiState, onRefresh: () -> Uni
         }
         is HealthDashboardUiState.PermissionRequired -> {
             title = "Health access required"
-            detail = "Open the Health tab to grant access, then refresh Today."
+            detail = "Allow access to read your measured health records."
         }
         is HealthDashboardUiState.Error -> {
             title = "Health data could not load"
             detail = state.message
         }
         is HealthDashboardUiState.Content -> {
-            title = "Your measured signals"
-            detail = "No recovery score or training recommendation is calculated in this build."
+            val available = listOf(data?.sleep, data?.heartRate, data?.hrv, data?.respiratoryRate, data?.latestActivity).count { it != null }
+            title = "$available of 5 signals available"
+            detail = "Measured records only. No recovery score or recommendation is generated."
         }
     }
 
@@ -192,7 +223,12 @@ private fun HealthStatusHero(state: HealthDashboardUiState, onRefresh: () -> Uni
                 }
             }
             Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
-            if (!ready && state !is HealthDashboardUiState.Loading) {
+            if (state is HealthDashboardUiState.PermissionRequired) {
+                Button(
+                    onClick = onPermission,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Night),
+                ) { Text("Allow health access", fontWeight = FontWeight.Bold) }
+            } else if (state is HealthDashboardUiState.Error || (!ready && state !is HealthDashboardUiState.Loading)) {
                 Button(
                     onClick = onRefresh,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Night),
@@ -206,23 +242,24 @@ private fun HealthStatusHero(state: HealthDashboardUiState, onRefresh: () -> Uni
 private fun LatestSignalsCard(data: HealthDashboardData) = SurfaceCard {
     Text("LATEST RECORDS", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
     Text("Direct from Health Connect", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+    Text("Synced ${HealthDisplayFormatter.time(data.syncedAt)}", color = Muted, fontSize = 10.sp, modifier = Modifier.padding(top = 3.dp))
     Spacer(Modifier.height(14.dp))
-    SignalRow(Icons.Rounded.Bedtime, "Sleep", HealthDisplayFormatter.sleep(data.sleep))
+    SignalRow(Icons.Rounded.Bedtime, "Sleep", HealthDisplayFormatter.sleep(data.sleep), data.sleep?.origin?.appLabel)
     Divider()
-    SignalRow(Icons.Rounded.Favorite, "Heart rate", HealthDisplayFormatter.heartRate(data.heartRate))
+    SignalRow(Icons.Rounded.Favorite, "Heart rate", HealthDisplayFormatter.heartRate(data.heartRate), data.heartRate?.origin?.appLabel)
     Divider()
-    SignalRow(Icons.Rounded.MonitorHeart, "HRV", HealthDisplayFormatter.hrv(data.hrv))
+    SignalRow(Icons.Rounded.MonitorHeart, "HRV", HealthDisplayFormatter.hrv(data.hrv), data.hrv?.origin?.appLabel)
     Divider()
-    SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", HealthDisplayFormatter.respiratoryRate(data.respiratoryRate))
+    SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", HealthDisplayFormatter.respiratoryRate(data.respiratoryRate), data.respiratoryRate?.origin?.appLabel)
     Divider()
-    SignalRow(Icons.Rounded.FitnessCenter, "Latest activity", HealthDisplayFormatter.activity(data.latestActivity))
+    SignalRow(Icons.Rounded.FitnessCenter, "Latest activity", HealthDisplayFormatter.activity(data.latestActivity), data.latestActivity?.origin?.appLabel)
 }
 
 @Composable
 private fun Divider() = HorizontalDivider(Modifier.padding(vertical = 11.dp), color = Color(0xFFE5EDF3))
 
 @Composable
-private fun SignalRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+private fun SignalRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, source: String?) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFFE1F4FA)), contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = Ocean, modifier = Modifier.size(18.dp))
@@ -230,6 +267,7 @@ private fun SignalRow(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(label, color = Muted, fontSize = 11.sp)
             Text(value, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp)
+            if (source != null) Text("Source: $source", color = Ocean, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

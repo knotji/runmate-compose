@@ -35,10 +35,10 @@ Goal: stop treating health measurements as display strings.
 
 - [x] Introduce typed Sleep and Heart Rate models.
 - [x] Introduce typed HRV, Respiratory Rate, and Activity models.
-- Preserve record identifiers, source metadata, start/end time, zone, and last-synced time where available.
+- [x] Preserve source metadata, start/end time, and last-synced time where available.
 - Format values only in the UI mapper.
 - Represent a successful query with no record separately from a failed query.
-- Keep valid content visible during refresh using `LoadState.Loading(previous)`.
+- [x] Keep valid content visible during refresh using a loading state with previous content.
 - Prevent an older refresh from replacing a newer result.
 
 Acceptance:

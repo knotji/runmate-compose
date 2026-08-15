@@ -43,7 +43,10 @@ Boot failure must expose retry/logout as applicable. Never show an indefinite lo
 
 - Only the ViewModel/store starts refresh work.
 - A new foreground refresh supersedes an older result.
+- The ViewModel cancels its previous refresh job before starting a new one, preventing an older query from replacing newer state.
 - Pull-to-refresh keeps previous content and exposes a progress indicator.
+- Today displays the last successful sync time and the originating application for each available signal.
+- Health permission can be granted from Today; the user is not forced through a diagnostic screen.
 - Permission changes trigger a fresh permission check before a query.
 - Screen re-entry must not create duplicate collectors or concurrent full refreshes.
 - Navigation and transient selection survive configuration changes through `SavedStateHandle` or `rememberSaveable`.

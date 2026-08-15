@@ -5,10 +5,16 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+data class SignalOrigin(
+    val packageName: String,
+    val appLabel: String,
+)
+
 data class SleepSummary(
     val duration: Duration,
     val startedAt: Instant,
     val endedAt: Instant,
+    val origin: SignalOrigin? = null,
 ) {
     init {
         require(!duration.isNegative) { "Sleep duration cannot be negative" }
@@ -19,6 +25,7 @@ data class SleepSummary(
 data class HeartRateSummary(
     val beatsPerMinute: Long,
     val measuredAt: Instant,
+    val origin: SignalOrigin? = null,
 ) {
     init {
         require(beatsPerMinute > 0) { "Heart rate must be positive" }
@@ -28,6 +35,7 @@ data class HeartRateSummary(
 data class HrvSummary(
     val rmssdMillis: Double,
     val measuredAt: Instant,
+    val origin: SignalOrigin? = null,
 ) {
     init {
         require(rmssdMillis > 0.0 && rmssdMillis.isFinite()) { "HRV RMSSD must be a positive finite value" }
@@ -37,6 +45,7 @@ data class HrvSummary(
 data class RespiratoryRateSummary(
     val breathsPerMinute: Double,
     val measuredAt: Instant,
+    val origin: SignalOrigin? = null,
 ) {
     init {
         require(breathsPerMinute > 0.0 && breathsPerMinute.isFinite()) { "Respiratory rate must be a positive finite value" }
@@ -49,6 +58,7 @@ data class ActivitySummary(
     val duration: Duration,
     val startedAt: Instant,
     val endedAt: Instant,
+    val origin: SignalOrigin? = null,
 ) {
     init {
         require(!duration.isNegative) { "Activity duration cannot be negative" }

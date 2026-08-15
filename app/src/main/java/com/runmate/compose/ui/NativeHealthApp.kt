@@ -304,7 +304,7 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
         item { Text("Compose experiment • read-only", color = RunMateGreen) }
         item { DarkHealthCard("Recovery", "Uses the existing RunMate result; no duplicate calculation") }
         when (val current = state) {
-            HealthDashboardUiState.Loading -> item { LoadingState() }
+            is HealthDashboardUiState.Loading -> item { LoadingState() }
             HealthDashboardUiState.Unavailable -> item { DarkHealthCard("Health Connect", "Unavailable on this device") }
             is HealthDashboardUiState.PermissionRequired -> {
                 item { DarkHealthCard("Health Connect", "Permission is required to read real health data") }

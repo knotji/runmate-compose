@@ -22,6 +22,7 @@ data class HealthDashboardData(
     val respiratoryRate: RespiratoryRateSummary?,
     val latestActivity: ActivitySummary?,
     val sevenDayTrend: List<DailyHealthPoint>,
+    val syncedAt: Instant,
 )
 
 data class DailyHealthPoint(
@@ -72,10 +73,10 @@ class HealthDashboardRepository(private val context: Context) {
 
         return HealthLoadResult.Success(
             HealthDashboardData(
-                sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime) },
-                heartRate?.samples?.maxByOrNull { it.time }?.let { HeartRateSummary(it.beatsPerMinute, it.time) },
-                hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time) },
-                respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time) },
+                sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime, origin(it.metadata.dataOrigin.packageName)) },
+                heartRate?.samples?.maxByOrNull { it.time }?.let { HeartRateSummary(it.beatsPerMinute, it.time, origin(heartRate.metadata.dataOrigin.packageName)) },
+                hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time, origin(it.metadata.dataOrigin.packageName)) },
+                respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time, origin(it.metadata.dataOrigin.packageName)) },
                 latestActivity?.let {
                     ActivitySummary(
                         typeCode = it.exerciseType,
@@ -83,9 +84,11 @@ class HealthDashboardRepository(private val context: Context) {
                         duration = Duration.between(it.startTime, it.endTime),
                         startedAt = it.startTime,
                         endedAt = it.endTime,
+                        origin = origin(it.metadata.dataOrigin.packageName),
                     )
                 },
                 buildSevenDayTrend(sleepRecords, heartRateRecords),
+                syncedAt = now,
             ),
         )
     }
@@ -109,6 +112,14 @@ class HealthDashboardRepository(private val context: Context) {
                 averageHeartRate = heartSamples.takeIf { it.isNotEmpty() }?.map { it.beatsPerMinute.toDouble() }?.average(),
             )
         }
+    }
+
+    private fun origin(packageName: String): SignalOrigin {
+        val label = runCatching {
+            val info = context.packageManager.getApplicationInfo(packageName, 0)
+            context.packageManager.getApplicationLabel(info).toString()
+        }.getOrDefault(packageName)
+        return SignalOrigin(packageName, label)
     }
 
 }
