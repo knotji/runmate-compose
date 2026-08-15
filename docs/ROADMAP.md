@@ -29,6 +29,8 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 - [x] Today, Health, Move, and Coach navigation with honest unavailable states.
 - [x] Supabase public-client configuration and project reachability check without auth or data access.
 - [x] Existing-account email/password sign-in, encrypted restore/refresh/logout, and minimal read-only profile.
+- [x] Dedicated Google OAuth PKCE login gate and Android deep-link callback.
+- [x] Minimal Today summary; detailed records and trends remain in Health.
 - [ ] Physical-device acceptance pass recorded for the real-data Today screen.
 - [x] Sleep and Heart Rate use typed domain models; display formatting is outside the repository.
 

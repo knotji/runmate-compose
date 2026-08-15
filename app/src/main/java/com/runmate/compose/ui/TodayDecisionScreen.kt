@@ -123,14 +123,9 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
                     },
                 )
             }
-            if (content != null) {
-                item { LatestSignalsCard(content) }
-                item { PersonalBaselineCard(content.sevenDayTrend) }
-                item { SevenDayChart(content.sevenDayTrend) }
-            }
             item {
                 Text(
-                    "ONLY RECORDS RETURNED BY HEALTH CONNECT ARE SHOWN",
+                    "DETAILS AND TRENDS ARE IN HEALTH",
                     color = Muted,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,

@@ -4,6 +4,10 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 import java.time.Instant
+import java.security.MessageDigest
+import java.security.SecureRandom
+import android.net.Uri
+import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,6 +31,29 @@ sealed interface ProfileResult {
 }
 
 class SupabaseAuthRepository(private val config: SupabaseConfig) {
+    data class OAuthRequest(val url: String, val verifier: String)
+
+    fun googleOAuthRequest(): OAuthRequest? {
+        if (!config.isConfigured) return null
+        val random = ByteArray(48).also(SecureRandom()::nextBytes)
+        val verifier = Base64.encodeToString(random, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        val challenge = Base64.encodeToString(
+            MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII)),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
+        )
+        val url = Uri.parse(config.url.trimEnd('/') + "/auth/v1/authorize").buildUpon()
+            .appendQueryParameter("provider", "google")
+            .appendQueryParameter("redirect_to", OAUTH_CALLBACK)
+            .appendQueryParameter("code_challenge", challenge)
+            .appendQueryParameter("code_challenge_method", "s256")
+            .build().toString()
+        return OAuthRequest(url, verifier)
+    }
+
+    fun exchangeOAuthCode(code: String, verifier: String): AuthResult = authRequest(
+        path = "/auth/v1/token?grant_type=pkce",
+        body = JSONObject().put("auth_code", code).put("code_verifier", verifier),
+    )
     fun signIn(email: String, password: String): AuthResult {
         if (!config.isConfigured) return AuthResult.Failure("Supabase is not configured")
         if (!email.contains('@') || password.isBlank()) return AuthResult.Failure("Enter a valid email and password")
@@ -112,6 +139,8 @@ class SupabaseAuthRepository(private val config: SupabaseConfig) {
         language = row.nullableString("language"),
         updatedAt = row.nullableString("updated_at"),
     )
+
+    companion object { const val OAUTH_CALLBACK = "com.wholemate.app://auth/callback" }
 }
 
 private fun JSONObject.nullableString(key: String): String? =

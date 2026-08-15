@@ -4,13 +4,13 @@
 
 Today is the health-first home of WholeMate. It presents the minimum complete picture available now without inventing missing health or AI output.
 
+Today is intentionally short: date, measured-status badge, one body-picture hero, and three glanceable rings. Detailed records, baselines, and seven-day charts live under Health.
+
 ## Information order
 
 1. At-a-glance body picture: three rings for today's Sleep, Heart, and measured signal coverage, with neutral baseline deltas.
 2. Health Connect permission and refresh action when attention is required.
-3. Latest measured Sleep, Heart Rate, HRV, Respiratory Rate, and Activity records with source and sync time.
-4. Deterministic personal-baseline comparisons when sufficient history exists.
-5. Seven-day measured chart.
+3. A clear route to Health for records, baselines, and trends.
 
 ## At-a-glance body picture
 

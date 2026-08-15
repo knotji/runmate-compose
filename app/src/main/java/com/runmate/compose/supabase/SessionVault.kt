@@ -43,6 +43,16 @@ class SessionVault(context: Context) {
         preferences.edit().remove(SESSION_KEY).apply()
     }
 
+    fun savePkceVerifier(verifier: String) {
+        preferences.edit().putString(PKCE_KEY, encrypt(verifier)).apply()
+    }
+
+    fun takePkceVerifier(): String? = runCatching {
+        val encrypted = preferences.getString(PKCE_KEY, null) ?: return null
+        preferences.edit().remove(PKCE_KEY).apply()
+        decrypt(encrypted)
+    }.getOrNull()
+
     private fun encrypt(plainText: String): String {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key())
@@ -72,6 +82,7 @@ class SessionVault(context: Context) {
 
     private companion object {
         const val SESSION_KEY = "session"
+        const val PKCE_KEY = "pkce_verifier"
         const val KEY_ALIAS = "wholemate_supabase_session_v1"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val IV_BYTES = 12

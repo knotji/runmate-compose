@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import android.net.Uri
 
 data class SupabaseConfig(val url: String, val publishableKey: String) {
     val isConfigured: Boolean
@@ -86,6 +87,42 @@ class SupabaseConnectionViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
+    fun beginGoogleSignIn(): String? {
+        val request = authRepository.googleOAuthRequest() ?: run {
+            mutableAccountState.value = AccountState.SignedOut("Supabase is not configured")
+            return null
+        }
+        sessionVault.savePkceVerifier(request.verifier)
+        mutableAccountState.value = AccountState.AwaitingGoogle
+        return request.url
+    }
+
+    fun handleOAuthCallback(uri: Uri) {
+        if (!uri.toString().startsWith(SupabaseAuthRepository.OAUTH_CALLBACK)) return
+        val error = uri.getQueryParameter("error_description") ?: uri.getQueryParameter("error")
+        if (error != null) {
+            sessionVault.takePkceVerifier()
+            mutableAccountState.value = AccountState.SignedOut(error)
+            return
+        }
+        val code = uri.getQueryParameter("code")
+        val verifier = sessionVault.takePkceVerifier()
+        if (code.isNullOrBlank() || verifier.isNullOrBlank()) {
+            mutableAccountState.value = AccountState.SignedOut("Google sign-in callback was incomplete")
+            return
+        }
+        viewModelScope.launch {
+            mutableAccountState.value = AccountState.Working
+            when (val result = withContext(Dispatchers.IO) { authRepository.exchangeOAuthCode(code, verifier) }) {
+                is AuthResult.Failure -> mutableAccountState.value = AccountState.SignedOut(result.message)
+                is AuthResult.Success -> {
+                    sessionVault.save(result.session)
+                    loadProfile(result.session)
+                }
+            }
+        }
+    }
+
     fun signOut() {
         val session = (mutableAccountState.value as? AccountState.SignedIn)?.session
         sessionVault.clear()
@@ -134,6 +171,7 @@ fun shouldRefreshSession(expiresAtEpochSeconds: Long, nowEpochSeconds: Long): Bo
 sealed interface AccountState {
     data object Restoring : AccountState
     data object Working : AccountState
+    data object AwaitingGoogle : AccountState
     data class SignedOut(val message: String? = null) : AccountState
     data class SignedIn(
         val session: StoredSession,

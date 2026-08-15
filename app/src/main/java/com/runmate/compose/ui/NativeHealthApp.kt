@@ -39,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -59,9 +58,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,6 +95,14 @@ fun NativeHealthApp(
         if (!experimentEnabled) {
             ExperimentDisabled()
             return@MaterialTheme
+        }
+
+        if (supabaseViewModel != null) {
+            val accountState by supabaseViewModel.accountState.collectAsStateWithLifecycle()
+            if (accountState !is AccountState.SignedIn) {
+                LoginScreen(accountState, supabaseViewModel)
+                return@MaterialTheme
+            }
         }
 
         val storedDestination = appStore?.destination?.collectAsStateWithLifecycle()?.value
@@ -180,11 +184,6 @@ private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
 private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value ?: SupabaseConnectionState.NotConfigured
     val accountState = viewModel?.accountState?.collectAsStateWithLifecycle()?.value ?: AccountState.SignedOut()
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    LaunchedEffect(accountState) {
-        if (accountState is AccountState.SignedIn) password = ""
-    }
     LaunchedEffect(viewModel) { viewModel?.checkConnection() }
     val status = when (state) {
         SupabaseConnectionState.NotConfigured -> "Local project URL and publishable key are not configured"
@@ -202,37 +201,9 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
         item { DarkHealthCard("Supabase", status) }
         when (val account = accountState) {
             AccountState.Restoring -> item { DarkHealthCard("Account", "Restoring encrypted session…") }
-            AccountState.Working -> item { LoadingState() }
+            AccountState.Working, AccountState.AwaitingGoogle -> item { LoadingState() }
             is AccountState.SignedOut -> {
-                item { DarkHealthCard("Account", account.message ?: "Sign in to read your existing profile") }
-                item {
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                item {
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                item {
-                    Button(
-                        onClick = { viewModel?.signIn(email, password) },
-                        enabled = viewModel != null && email.isNotBlank() && password.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Sign in") }
-                }
+                item { DarkHealthCard("Account", account.message ?: "Signed out") }
             }
             is AccountState.SignedIn -> {
                 item { DarkHealthCard("Account", account.profile?.displayName ?: account.session.email) }
