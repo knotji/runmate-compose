@@ -1,9 +1,5 @@
 package com.runmate.compose.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -22,11 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
 import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,14 +31,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -61,55 +55,54 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.runmate.compose.health.DailyHealthPoint
 import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val DecisionInk = Color(0xFF142A46)
-private val DecisionMuted = Color(0xFF667A91)
-private val DecisionOcean = Color(0xFF197C9B)
-private val DecisionCanvas = Color(0xFFF3F8FC)
-private val DecisionCyan = Color(0xFF9BE7F5)
-private val DecisionGold = Color(0xFFFFD26F)
-private val DecisionSky = Color(0xFFB7D8FF)
-private val DecisionNight = Color(0xFF071C31)
+private val Ink = Color(0xFF142A46)
+private val Muted = Color(0xFF667A91)
+private val Ocean = Color(0xFF197C9B)
+private val CanvasColor = Color(0xFFF3F8FC)
+private val Cyan = Color(0xFF9BE7F5)
+private val Gold = Color(0xFFFFD26F)
+private val Night = Color(0xFF071C31)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
     val state = viewModel?.state?.collectAsStateWithLifecycle()?.value
+        ?: HealthDashboardUiState.Unavailable
     val content = (state as? HealthDashboardUiState.Content)?.data
     val refreshing = state is HealthDashboardUiState.Loading
-    var explanationOpen by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) { viewModel?.refresh() }
 
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = { viewModel?.refresh() },
-        modifier = Modifier.fillMaxSize().background(DecisionCanvas),
+        modifier = Modifier.fillMaxSize().background(CanvasColor),
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp, 20.dp, 20.dp, 30.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { DecisionHeader(content != null) }
-            item { DecisionRecoveryHero(content, onExplain = { explanationOpen = true }) }
-            item { InteractiveTrainingCard() }
-            item { RealSignalsCard(content, refreshing) }
-            item { SevenDayChart(content?.sevenDayTrend.orEmpty()) }
-            item { DecisionInsightCard(content) }
+            item { TodayHeader(content != null) }
+            item { HealthStatusHero(state, onRefresh = { viewModel?.refresh() }) }
+            if (content != null) {
+                item { LatestSignalsCard(content) }
+                item { SevenDayChart(content.sevenDayTrend) }
+            }
             item {
                 Text(
-                    "RECOVERY / STRAIN / ENERGY ARE PREVIEW • HEALTH SIGNALS ARE MEASURED",
-                    color = DecisionMuted,
+                    "ONLY RECORDS RETURNED BY HEALTH CONNECT ARE SHOWN",
+                    color = Muted,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
@@ -118,121 +111,125 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
             }
         }
     }
-
-    if (explanationOpen) {
-        RecoveryExplanationSheet(onDismiss = { explanationOpen = false }, measured = content)
-    }
 }
 
 @Composable
-private fun DecisionHeader(connected: Boolean) {
+private fun TodayHeader(connected: Boolean) {
     val todayLabel = remember {
-        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)).uppercase(Locale.ENGLISH)
+        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH))
+            .uppercase(Locale.ENGLISH)
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(todayLabel, color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-            Text("Today", color = DecisionInk, fontSize = 32.sp, fontWeight = FontWeight.Black)
-            Text(if (connected) "Your health signals are up to date" else "Pull down to read health signals", color = DecisionMuted, fontSize = 13.sp)
+            Text(todayLabel, color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+            Text("Today", color = Ink, fontSize = 32.sp, fontWeight = FontWeight.Black)
+            Text(if (connected) "Health Connect records loaded" else "Waiting for measured health data", color = Muted, fontSize = 13.sp)
         }
-        Box(
-            Modifier.clip(RoundedCornerShape(99.dp)).background(if (connected) Color(0xFFDDF5E7) else Color(0xFFFFF1D6)).padding(horizontal = 10.dp, vertical = 7.dp),
-        ) {
-            Text(if (connected) "MEASURED" else "PREVIEW", color = if (connected) Color(0xFF237347) else Color(0xFF8B650F), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
-        }
+        StatusBadge(if (connected) "MEASURED" else "NO DATA", connected)
     }
 }
 
 @Composable
-private fun DecisionRecoveryHero(data: HealthDashboardData?, onExplain: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
+private fun StatusBadge(text: String, positive: Boolean) {
+    Box(
+        Modifier.clip(RoundedCornerShape(99.dp))
+            .background(if (positive) Color(0xFFDDF5E7) else Color(0xFFFFF1D6))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+    ) {
+        Text(text, color = if (positive) Color(0xFF237347) else Color(0xFF8B650F), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+@Composable
+private fun HealthStatusHero(state: HealthDashboardUiState, onRefresh: () -> Unit) {
+    val title: String
+    val detail: String
+    val ready = state is HealthDashboardUiState.Content
+    when (state) {
+        HealthDashboardUiState.Loading -> {
+            title = "Reading your signals"
+            detail = "Fetching the latest records from Health Connect."
+        }
+        HealthDashboardUiState.Unavailable -> {
+            title = "Health Connect unavailable"
+            detail = "Health records cannot be read on this device."
+        }
+        is HealthDashboardUiState.PermissionRequired -> {
+            title = "Health access required"
+            detail = "Open the Health tab to grant access, then refresh Today."
+        }
+        is HealthDashboardUiState.Error -> {
+            title = "Health data could not load"
+            detail = state.message
+        }
+        is HealthDashboardUiState.Content -> {
+            title = "Your measured signals"
+            detail = "No recovery score or training recommendation is calculated in this build."
+        }
+    }
+
     Card(
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onExplain()
-        },
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(12.dp),
+        elevation = CardDefaults.cardElevation(10.dp),
     ) {
         Column(
-            Modifier.background(Brush.linearGradient(listOf(DecisionNight, Color(0xFF0B4057), Color(0xFF147B89)))).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            Modifier.background(Brush.linearGradient(listOf(Night, Color(0xFF0B4057), Color(0xFF147B89)))).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("TODAY'S DECISION  •  PREVIEW", color = DecisionCyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
-                    Text("Keep it easy.", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
-                    Text("Build aerobic fitness without borrowing from tomorrow.", color = Color.White.copy(.72f), fontSize = 13.sp, lineHeight = 18.sp)
-                }
-                Box(Modifier.size(94.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator({ 1f }, Modifier.fillMaxSize(), color = Color.White.copy(.12f), strokeWidth = 8.dp)
-                    CircularProgressIndicator({ .78f }, Modifier.fillMaxSize(), color = DecisionCyan, strokeWidth = 8.dp, strokeCap = StrokeCap.Round)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("78", color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Black)
-                        Text("READY", color = Color.White.copy(.65f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(.1f)), contentAlignment = Alignment.Center) {
+                    if (state is HealthDashboardUiState.Loading) {
+                        CircularProgressIndicator(Modifier.size(24.dp), color = Cyan, strokeWidth = 3.dp)
+                    } else {
+                        Icon(if (ready) Icons.Rounded.MonitorHeart else Icons.Rounded.Refresh, null, tint = if (ready) Cyan else Gold)
                     }
                 }
+                Column(Modifier.padding(start = 14.dp).weight(1f)) {
+                    Text(if (ready) "HEALTH CONNECT  •  MEASURED" else "HEALTH CONNECT", color = if (ready) Cyan else Gold, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                HeroMetric("SLEEP", data?.sleep?.substringBefore(" ") ?: "--", if (data == null) "NOT LOADED" else "MEASURED", Modifier.weight(1f))
-                HeroMetric("STRAIN", "4.2", "PREVIEW", Modifier.weight(1f))
-                HeroMetric("ENERGY", "82", "PREVIEW", Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Why this decision?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text("VIEW SIGNALS  →", color = DecisionCyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+            Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
+            if (!ready && state !is HealthDashboardUiState.Loading) {
+                Button(
+                    onClick = onRefresh,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Night),
+                ) { Text("Try again", fontWeight = FontWeight.Bold) }
             }
         }
     }
 }
 
 @Composable
-private fun HeroMetric(label: String, value: String, source: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(.08f)).padding(horizontal = 12.dp, vertical = 11.dp),
-    ) {
-        Text(label, color = Color.White.copy(.58f), fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
-        Text(value, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Black)
-        Text(source, color = if (source == "MEASURED") DecisionCyan else DecisionGold, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
-    }
-}
-
-@Composable
-private fun AnimatedDial(label: String, value: Int, color: Color) {
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
-    val progress by animateFloatAsState(if (started) value / 100f else 0f, tween(900), label = "$label progress")
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(Modifier.size(82.dp), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator({ 1f }, Modifier.fillMaxSize(), color = Color.White.copy(.16f), strokeWidth = 7.dp)
-            CircularProgressIndicator({ progress }, Modifier.fillMaxSize(), color = color, strokeWidth = 7.dp, strokeCap = StrokeCap.Round)
-            Text(value.toString(), color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
-        }
-        Text(label, color = Color.White.copy(.82f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun RealSignalsCard(data: HealthDashboardData?, refreshing: Boolean) = DecisionCard {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        DecisionIcon(Icons.Rounded.Favorite, Color(0xFFE1F4FA), DecisionOcean)
-        Column(Modifier.padding(start = 14.dp).weight(1f)) {
-            Text("MEASURED SIGNALS", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
-            Text(if (refreshing) "Refreshing Health Connect…" else "What shaped today", color = DecisionInk, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
-        }
-    }
+private fun LatestSignalsCard(data: HealthDashboardData) = SurfaceCard {
+    Text("LATEST RECORDS", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    Text("Direct from Health Connect", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(14.dp))
-    SignalRow("Sleep", data?.sleep ?: "No measured value loaded")
-    HorizontalDivider(Modifier.padding(vertical = 10.dp), color = Color(0xFFE5EDF3))
-    SignalRow("Heart rate", data?.heartRate ?: "No measured value loaded")
+    SignalRow(Icons.Rounded.Bedtime, "Sleep", data.sleep)
+    Divider()
+    SignalRow(Icons.Rounded.Favorite, "Heart rate", data.heartRate)
+    Divider()
+    SignalRow(Icons.Rounded.MonitorHeart, "HRV", data.hrv)
+    Divider()
+    SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", data.respiratoryRate)
+    Divider()
+    SignalRow(Icons.Rounded.FitnessCenter, "Workout", data.workout)
 }
 
 @Composable
-private fun SignalRow(label: String, value: String) {
+private fun Divider() = HorizontalDivider(Modifier.padding(vertical = 11.dp), color = Color(0xFFE5EDF3))
+
+@Composable
+private fun SignalRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-        Text(label, color = DecisionMuted, fontSize = 12.sp, modifier = Modifier.weight(.3f))
-        Text(value, color = DecisionInk, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, modifier = Modifier.weight(.7f))
+        Box(Modifier.size(34.dp).clip(CircleShape).background(Color(0xFFE1F4FA)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = Ocean, modifier = Modifier.size(18.dp))
+        }
+        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(label, color = Muted, fontSize = 11.sp)
+            Text(value, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp)
+        }
     }
 }
 
@@ -242,27 +239,32 @@ private fun SevenDayChart(points: List<DailyHealthPoint>) {
     var selected by rememberSaveable { mutableIntStateOf(6) }
     val haptic = LocalHapticFeedback.current
     val values = points.map { if (metric == 0) it.sleepHours else it.averageHeartRate }
-    val fallback = if (metric == 0) listOf(6.4, 7.1, 6.8, 7.5, 7.2, 8.0, 7.4) else listOf(67.0, 64.0, 66.0, 63.0, 61.0, 62.0, 60.0)
-    val chartValues = if (values.any { it != null }) values.map { it ?: Double.NaN } else fallback
-    val labels = if (points.size == 7) points.map { it.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).take(1) } else listOf("S", "M", "T", "W", "T", "F", "S")
-    val usingMeasured = values.any { it != null }
+    val chartValues = values.map { it ?: Double.NaN }
+    val hasRecords = values.any { it != null }
+    val labels = points.map { it.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).take(1) }
 
-    DecisionCard {
+    SurfaceCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("7-DAY SIGNAL", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
-                Text(if (metric == 0) "Sleep duration" else "Average heart rate", color = DecisionInk, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                Text("7-DAY RECORDS", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+                Text(if (metric == 0) "Sleep duration" else "Average heart rate", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
             }
             Button(
                 onClick = { metric = 1 - metric; selected = 6 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1F4FA), contentColor = DecisionOcean),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE1F4FA), contentColor = Ocean),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp),
             ) { Text(if (metric == 0) "Show HR" else "Show sleep", fontSize = 11.sp) }
         }
+        if (!hasRecords) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                Text("No measured records for this 7-day period", color = Muted, fontSize = 13.sp)
+            }
+            return@SurfaceCard
+        }
         val chosen = chartValues.getOrNull(selected)
         Text(
-            if (chosen == null || chosen.isNaN()) "No value for this day" else if (metric == 0) "${"%.1f".format(chosen)} hours" else "${chosen.toInt()} bpm",
-            color = DecisionOcean,
+            if (chosen == null || chosen.isNaN()) "No record for this day" else if (metric == 0) "${"%.1f".format(chosen)} hours" else "${chosen.toInt()} bpm",
+            color = Ocean,
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.padding(top = 14.dp),
@@ -283,13 +285,13 @@ private fun SevenDayChart(points: List<DailyHealthPoint>) {
                     },
                 )
             },
-        ) {
-            SignalChart(chartValues, selected)
-        }
+        ) { SignalChart(chartValues, selected) }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            labels.forEachIndexed { index, label -> Text(label, color = if (index == selected) DecisionOcean else DecisionMuted, fontSize = 10.sp, fontWeight = if (index == selected) FontWeight.ExtraBold else FontWeight.Normal) }
+            labels.forEachIndexed { index, label ->
+                Text(label, color = if (index == selected) Ocean else Muted, fontSize = 10.sp, fontWeight = if (index == selected) FontWeight.ExtraBold else FontWeight.Normal)
+            }
         }
-        Text(if (usingMeasured) "Measured from Health Connect" else "Preview trend • no 7-day records loaded", color = DecisionMuted, fontSize = 10.sp, modifier = Modifier.padding(top = 10.dp))
+        Text("Measured from Health Connect", color = Muted, fontSize = 10.sp, modifier = Modifier.padding(top = 10.dp))
     }
 }
 
@@ -309,101 +311,19 @@ private fun SignalChart(values: List<Double>, selected: Int) {
                 if (!started) { path.moveTo(x(index), y(value)); started = true } else path.lineTo(x(index), y(value))
             }
         }
-        drawPath(path, color = DecisionOcean, style = Stroke(width = 6f, cap = StrokeCap.Round))
+        drawPath(path, color = Ocean, style = Stroke(width = 6f, cap = StrokeCap.Round))
         values.forEachIndexed { index, value ->
-            if (!value.isNaN()) drawCircle(if (index == selected) DecisionGold else DecisionOcean, radius = if (index == selected) 11f else 7f, center = androidx.compose.ui.geometry.Offset(x(index), y(value)))
+            if (!value.isNaN()) drawCircle(if (index == selected) Gold else Ocean, radius = if (index == selected) 11f else 7f, center = androidx.compose.ui.geometry.Offset(x(index), y(value)))
         }
     }
 }
 
 @Composable
-private fun InteractiveTrainingCard() {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    var choice by rememberSaveable { mutableStateOf("Ready") }
-    val haptic = LocalHapticFeedback.current
+private fun SurfaceCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     Card(
-        onClick = { expanded = !expanded; haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-        modifier = Modifier.fillMaxWidth().animateContentSize(),
+        Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
-    ) {
-        Column(Modifier.padding(18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-        DecisionIcon(Icons.AutoMirrored.Rounded.DirectionsRun, Color(0xFFE1F4FA), DecisionOcean)
-                Column(Modifier.padding(start = 14.dp).weight(1f)) {
-                    Text("TODAY’S TRAINING • PREVIEW", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Easy aerobic run", color = DecisionInk, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("35–45 min • Conversational pace", color = DecisionMuted, fontSize = 13.sp)
-                }
-                Icon(Icons.Rounded.ExpandMore, null, tint = DecisionOcean)
-            }
-            AnimatedVisibility(expanded) {
-                Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("How does this plan feel right now?", color = DecisionInk, fontWeight = FontWeight.Bold)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("Ready", "Reduce", "Rest").forEach { option ->
-                            Button(
-                                onClick = { choice = option; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(containerColor = if (choice == option) DecisionOcean else Color(0xFFE8F0F5), contentColor = if (choice == option) Color.White else DecisionMuted),
-                                contentPadding = PaddingValues(horizontal = 4.dp),
-                            ) { Text(option, fontSize = 11.sp) }
-                        }
-                    }
-                    Text("Preview only • this does not change your production plan", color = DecisionMuted, fontSize = 10.sp)
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RecoveryExplanationSheet(onDismiss: () -> Unit, measured: HealthDashboardData?) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 22.dp).padding(bottom = 34.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Why 78 today?", color = DecisionInk, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
-            Text("The score is a UI preview. The health evidence below is kept separate.", color = DecisionMuted, fontSize = 13.sp)
-            ExplanationRow("MEASURED", "Sleep", measured?.sleep ?: "Not loaded", Color(0xFFDDF5E7))
-            ExplanationRow("MEASURED", "Heart rate", measured?.heartRate ?: "Not loaded", Color(0xFFDDF5E7))
-            ExplanationRow("DERIVED PREVIEW", "Sleep consistency", "+12 readiness", Color(0xFFFFF1D6))
-            ExplanationRow("DERIVED PREVIEW", "Recent training load", "−6 readiness", Color(0xFFFFF1D6))
-            Text("No HRV or respiratory value is fabricated when Health Connect has no record.", color = DecisionOcean, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun ExplanationRow(badge: String, title: String, value: String, badgeColor: Color) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFF5F8FA)).padding(14.dp)) {
-        Text(badge, color = DecisionOcean, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.clip(CircleShape).background(badgeColor).padding(horizontal = 8.dp, vertical = 4.dp))
-        Text(title, color = DecisionInk, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
-        Text(value, color = DecisionMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
-    }
-}
-
-@Composable
-private fun DecisionInsightCard(data: HealthDashboardData?) = DecisionCard(container = Color(0xFFEAF5FC)) {
-    Row(verticalAlignment = Alignment.Top) {
-        DecisionIcon(Icons.Rounded.Insights, Color.White, DecisionOcean)
-        Column(Modifier.padding(start = 14.dp).weight(1f)) {
-            Text("RUNMATE INSIGHT • PREVIEW", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-            Text(if (data == null) "Connect health data to ground this explanation." else "Your measured sleep is available to support a transparent readiness explanation.", color = DecisionInk, fontSize = 15.sp, fontWeight = FontWeight.Bold, lineHeight = 21.sp)
-        }
-    }
-}
-
-@Composable
-private fun DecisionCard(container: Color = Color.White, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(container), elevation = CardDefaults.cardElevation(2.dp)) {
-        Column(Modifier.padding(18.dp), content = content)
-    }
-}
-
-@Composable
-private fun DecisionIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, background: Color, tint: Color) {
-    Box(Modifier.size(44.dp).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
-        Icon(icon, null, tint = tint)
-    }
+    ) { Column(Modifier.padding(18.dp), content = content) }
 }

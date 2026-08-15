@@ -104,7 +104,7 @@ fun NativeHealthApp(
             Box(Modifier.padding(padding).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> TodayDecisionScreen(viewModel)
-                    else -> if (viewModel == null) PreviewHealth() else NativeHealthDashboard(viewModel)
+                    else -> if (viewModel == null) HealthUnavailable() else NativeHealthDashboard(viewModel)
                 }
             }
         }
@@ -343,13 +343,13 @@ private fun LoadingState() = Column(
 }
 
 @Composable
-private fun PreviewHealth() = LazyColumn(
+private fun HealthUnavailable() = LazyColumn(
     modifier = Modifier.fillMaxSize(),
     contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
 ) {
     item { Text("Health Dashboard", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
-    item { DarkHealthCard("Health Connect", "Preview") }
+    item { DarkHealthCard("Health Connect", "No data source is attached") }
 }
 
 @Composable

@@ -12,6 +12,6 @@ Use AndroidX Health Connect directly and read records only. Samsung Health Data 
 
 Production recovery is TypeScript client logic. Compose defines a versioned `RecoverySnapshot` consumer contract but keeps its provider unconfigured until a shared source is explicitly approved.
 
-## 2026-08-15 - Honest preview boundary
+## 2026-08-15 - No mock health or decision output
 
-Today UI may mock Recovery, Strain, Energy, and training guidance only with visible Preview/Derived labels. Sleep, heart rate, and workout values are Measured only when returned by Health Connect.
+Today renders only records returned by Health Connect. When data is absent, it shows an explicit empty, permission, unavailable, loading, or error state. Recovery, Strain, Energy, training guidance, and fallback chart values remain absent until an approved real provider exists.

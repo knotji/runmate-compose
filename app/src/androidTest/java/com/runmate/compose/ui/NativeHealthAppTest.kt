@@ -21,7 +21,7 @@ class NativeHealthAppTest {
     fun enabledExperimentOpensTodayAndNavigatesToHealth() {
         compose.setContent { NativeHealthApp(experimentEnabled = true) }
         compose.onNodeWithText("Today").assertIsDisplayed()
-        compose.onNodeWithText("Keep it easy.").assertIsDisplayed()
+        compose.onNodeWithText("Health Connect unavailable").assertIsDisplayed()
         compose.onNodeWithText("Health").performClick()
         compose.onNodeWithText("Health Dashboard").assertIsDisplayed()
     }

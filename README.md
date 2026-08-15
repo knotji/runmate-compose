@@ -45,7 +45,7 @@ Without the property, the application builds with the experiment disabled:
 5. Return to Ionic with its state intact.
 6. Pass tests and debug/release builds.
 
-The current Lab reads Health Connect data directly and includes a Today interaction benchmark. Recovery/Strain/Energy remain explicit previews because production recovery is still computed inside the TypeScript client. `RecoverySnapshot` defines the boundary for a future shared provider without duplicating that engine.
+The current Lab reads Health Connect data directly. Today shows only records returned by Health Connect; it does not render fallback chart values, mock recovery/strain/energy scores, or generated training guidance. `RecoverySnapshot` remains the boundary for a future shared provider without duplicating the production engine.
 
 ## Firebase App Distribution
 
