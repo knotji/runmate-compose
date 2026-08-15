@@ -34,7 +34,7 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 Goal: stop treating health measurements as display strings.
 
 - [x] Introduce typed Sleep and Heart Rate models.
-- [ ] Introduce typed HRV, Respiratory Rate, and Workout models.
+- [x] Introduce typed HRV, Respiratory Rate, and Activity models.
 - Preserve record identifiers, source metadata, start/end time, zone, and last-synced time where available.
 - Format values only in the UI mapper.
 - Represent a successful query with no record separately from a failed query.
@@ -150,4 +150,4 @@ Decision rules:
 
 ## Next executable slice
 
-Milestone 1 begins with typed health models and UI mapping. Keep this slice limited to Sleep and Heart Rate first, verify it, then extend the same contract to HRV, respiratory rate, and workout.
+Milestone 1 typed models now cover Sleep, Heart Rate, HRV, Respiratory Rate, and generic Activity. The next slice adds provider/source metadata, last-sync time, explicit per-signal absence, and refresh preservation before Milestone 2 UI expansion.

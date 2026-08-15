@@ -211,11 +211,11 @@ private fun LatestSignalsCard(data: HealthDashboardData) = SurfaceCard {
     Divider()
     SignalRow(Icons.Rounded.Favorite, "Heart rate", HealthDisplayFormatter.heartRate(data.heartRate))
     Divider()
-    SignalRow(Icons.Rounded.MonitorHeart, "HRV", data.hrv)
+    SignalRow(Icons.Rounded.MonitorHeart, "HRV", HealthDisplayFormatter.hrv(data.hrv))
     Divider()
-    SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", data.respiratoryRate)
+    SignalRow(Icons.Rounded.MonitorHeart, "Respiratory rate", HealthDisplayFormatter.respiratoryRate(data.respiratoryRate))
     Divider()
-    SignalRow(Icons.Rounded.FitnessCenter, "Workout", data.workout)
+    SignalRow(Icons.Rounded.FitnessCenter, "Latest activity", HealthDisplayFormatter.activity(data.latestActivity))
 }
 
 @Composable

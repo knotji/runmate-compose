@@ -33,4 +33,31 @@ class HealthModelsTest {
             HeartRateSummary(0, Instant.parse("2026-08-15T00:15:00Z"))
         }
     }
+
+    @Test fun hrvAndRespiratoryFormattingPreserveUnits() {
+        val instant = Instant.parse("2026-08-15T00:15:00Z")
+
+        assertEquals("42.6 ms • 15 Aug, 07:15", HealthDisplayFormatter.hrv(HrvSummary(42.6, instant), bangkok))
+        assertEquals("15.2 breaths/min • 15 Aug, 07:15", HealthDisplayFormatter.respiratoryRate(RespiratoryRateSummary(15.2, instant), bangkok))
+    }
+
+    @Test fun activityIsGenericAndDoesNotAssumeRunning() {
+        val start = Instant.parse("2026-08-15T00:00:00Z")
+        val activity = ActivitySummary(79, "Strength training", Duration.ofMinutes(45), start, start.plusSeconds(2700))
+
+        assertEquals("Strength training • 45m • 15 Aug, 07:45", HealthDisplayFormatter.activity(activity, bangkok))
+    }
+
+    @Test fun untitledActivityKeepsProviderTypeCode() {
+        val start = Instant.parse("2026-08-15T00:00:00Z")
+        val activity = ActivitySummary(8, null, Duration.ofMinutes(30), start, start.plusSeconds(1800))
+
+        assertEquals("Activity type 8 • 30m • 15 Aug, 07:30", HealthDisplayFormatter.activity(activity, bangkok))
+    }
+
+    @Test fun invalidPhysiologyValuesAreRejected() {
+        val instant = Instant.parse("2026-08-15T00:15:00Z")
+        assertThrows(IllegalArgumentException::class.java) { HrvSummary(Double.NaN, instant) }
+        assertThrows(IllegalArgumentException::class.java) { RespiratoryRateSummary(0.0, instant) }
+    }
 }

@@ -18,9 +18,9 @@ import java.time.ZoneId
 data class HealthDashboardData(
     val sleep: SleepSummary?,
     val heartRate: HeartRateSummary?,
-    val hrv: String,
-    val respiratoryRate: String,
-    val workout: String,
+    val hrv: HrvSummary?,
+    val respiratoryRate: RespiratoryRateSummary?,
+    val latestActivity: ActivitySummary?,
     val sevenDayTrend: List<DailyHealthPoint>,
 )
 
@@ -67,18 +67,24 @@ class HealthDashboardRepository(private val context: Context) {
             .records.maxByOrNull { it.time }
         val respiratoryRate = client.readRecords(ReadRecordsRequest<RespiratoryRateRecord>(range, pageSize = 100))
             .records.maxByOrNull { it.time }
-        val workout = client.readRecords(ReadRecordsRequest<ExerciseSessionRecord>(range, pageSize = 30))
+        val latestActivity = client.readRecords(ReadRecordsRequest<ExerciseSessionRecord>(range, pageSize = 30))
             .records.maxByOrNull { it.endTime }
 
         return HealthLoadResult.Success(
             HealthDashboardData(
                 sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime) },
                 heartRate?.samples?.maxByOrNull { it.time }?.let { HeartRateSummary(it.beatsPerMinute, it.time) },
-                hrv?.let { "%.1f ms • %s".format(it.heartRateVariabilityMillis, HealthDisplayFormatter.time(it.time)) }
-                    ?: "No HRV data in the last 30 days",
-                respiratoryRate?.let { "%.1f breaths/min • %s".format(it.rate, HealthDisplayFormatter.time(it.time)) }
-                    ?: "No respiratory-rate data in the last 30 days",
-                workout?.let(::formatWorkout) ?: "No workout data in the last 30 days",
+                hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time) },
+                respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time) },
+                latestActivity?.let {
+                    ActivitySummary(
+                        typeCode = it.exerciseType,
+                        title = it.title,
+                        duration = Duration.between(it.startTime, it.endTime),
+                        startedAt = it.startTime,
+                        endedAt = it.endTime,
+                    )
+                },
                 buildSevenDayTrend(sleepRecords, heartRateRecords),
             ),
         )
@@ -105,9 +111,4 @@ class HealthDashboardRepository(private val context: Context) {
         }
     }
 
-    private fun formatWorkout(record: ExerciseSessionRecord): String {
-        val minutes = Duration.between(record.startTime, record.endTime).toMinutes()
-        val title = record.title?.takeIf(String::isNotBlank) ?: "Exercise type ${record.exerciseType}"
-        return "$title • ${minutes}m • ${HealthDisplayFormatter.time(record.endTime)}"
-    }
 }

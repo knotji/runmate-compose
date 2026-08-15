@@ -44,7 +44,7 @@ Dependencies point inward. SDK types stop at repository boundaries.
 - `core/state`: reusable load-state semantics.
 - `core/performance`: payload-free timing instrumentation.
 - `state`: app/session navigation state.
-- `health`: direct read-only Health Connect integration and UI model mapping.
+- `health`: typed Sleep, Heart Rate, HRV, Respiratory Rate, and generic Activity models plus direct read-only Health Connect mapping. Display strings are produced outside the repository.
 - `recovery`: versioned cross-client contract; the provider is intentionally unconfigured.
 - `ui`: Today decision screen and Health diagnostics.
 

@@ -320,9 +320,9 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
                 item { DarkHealthCard("Health Connect", "Connected") }
                 item { DarkHealthCard("Sleep", HealthDisplayFormatter.sleep(current.data.sleep)) }
                 item { DarkHealthCard("Heart rate", HealthDisplayFormatter.heartRate(current.data.heartRate)) }
-                item { DarkHealthCard("HRV (RMSSD)", current.data.hrv) }
-                item { DarkHealthCard("Respiratory rate", current.data.respiratoryRate) }
-                item { DarkHealthCard("Latest workout", current.data.workout) }
+                item { DarkHealthCard("HRV (RMSSD)", HealthDisplayFormatter.hrv(current.data.hrv)) }
+                item { DarkHealthCard("Respiratory rate", HealthDisplayFormatter.respiratoryRate(current.data.respiratoryRate)) }
+                item { DarkHealthCard("Latest activity", HealthDisplayFormatter.activity(current.data.latestActivity)) }
                 item { Button(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.Refresh, null); Text(" Refresh") } }
             }
             is HealthDashboardUiState.Error -> {
