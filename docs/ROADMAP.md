@@ -31,6 +31,7 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 - [x] Existing-account email/password sign-in, encrypted restore/refresh/logout, and minimal read-only profile.
 - [x] Dedicated Google OAuth PKCE login gate and Android deep-link callback.
 - [x] Minimal Today summary; detailed records and trends remain in Health.
+- [x] RunMate-compatible Health, Move, and Coach hierarchy with health-first naming and honest capability states.
 - [ ] Physical-device acceptance pass recorded for the real-data Today screen.
 - [x] Sleep and Heart Rate use typed domain models; display formatting is outside the repository.
 

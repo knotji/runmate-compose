@@ -2,6 +2,14 @@
 
 This file is the implementation contract for visual work. A screen change is incomplete when its values conflict with this document without updating the document in the same commit.
 
+## Primary tab hierarchy
+
+- Today stays glanceable: one body picture and no long diagnostic list.
+- Health follows Overview, Trends, Body, and Data Sources.
+- Move follows Tools, measured activity, and later daily records.
+- Coach follows Context, Topics, and later Conversation.
+- A card must say `MEASURED`, `CONNECTED`, `NOT CONNECTED`, `PLANNED`, or `DISABLED`; unavailable capabilities never receive preview values.
+
 ## Product character
 
 WholeMate is calm, precise, supportive, and human. It must not look clinical, gamified, alarmist, or exclusively athletic. Health facts, user reports, calculations, and AI interpretations must remain visually distinguishable.

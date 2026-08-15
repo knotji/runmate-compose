@@ -25,6 +25,12 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.Scale
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
@@ -164,12 +170,20 @@ private fun MoveScreen(viewModel: HealthDashboardViewModel?) {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { Text("Move", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
-        item { Text("Movement is one part of your health, not the whole score.", color = Color(0xFFB8C9C2)) }
+        item { ScreenHeading("MOVE", "Today’s Movement", "Activity is one signal inside your wider health picture.") }
+        item { SectionHeading("TOOLS", "Plan And Review") }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CompactToolCard(Icons.Rounded.CalendarMonth, "Plan", "Not connected", Modifier.weight(1f))
+                CompactToolCard(Icons.Rounded.Flag, "Goals", "Profile", Modifier.weight(1f))
+                CompactToolCard(Icons.Rounded.Insights, "Summary", "Health", Modifier.weight(1f))
+            }
+        }
+        item { SectionHeading("TODAY", "Measured Activity") }
         when (state) {
             is HealthDashboardUiState.Content -> {
-                item { DarkHealthCard("Steps today", HealthDisplayFormatter.steps(state.data.stepsToday)) }
-                item { DarkHealthCard("Latest activity", HealthDisplayFormatter.activity(state.data.latestActivity)) }
+                item { HubEntry(Icons.AutoMirrored.Rounded.DirectionsWalk, "Steps today", HealthDisplayFormatter.steps(state.data.stepsToday), if (state.data.stepsToday == null) "NO DATA" else "MEASURED") }
+                item { HubEntry(Icons.AutoMirrored.Rounded.DirectionsRun, "Latest activity", HealthDisplayFormatter.activity(state.data.latestActivity), if (state.data.latestActivity == null) "NO DATA" else "HEALTH CONNECT") }
                 item { Button(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.Refresh, null); Text(" Refresh") } }
             }
             is HealthDashboardUiState.PermissionRequired -> item { DarkHealthCard("Health access needed", "Grant access from the Health tab to see movement.") }
@@ -196,9 +210,9 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { Text("Coach", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
-        item { Text("Future guidance across body, activity, recovery, and stress.", color = Color(0xFFB8C9C2)) }
-        item { DarkHealthCard("Supabase", status) }
+        item { ScreenHeading("COACH", "Understand The Next Step", "Guidance will use your goals and measured health only when the evidence contract is ready.") }
+        item { SectionHeading("CONTEXT", "Based On Your Data") }
+        item { HubEntry(Icons.Rounded.Favorite, "Supabase", status, if (state == SupabaseConnectionState.Connected) "CONNECTED" else "CHECK") }
         when (val account = accountState) {
             AccountState.Restoring -> item { DarkHealthCard("Account", "Restoring encrypted session…") }
             AccountState.Working, AccountState.AwaitingGoogle -> item { LoadingState() }
@@ -206,21 +220,67 @@ private fun CoachScreen(viewModel: SupabaseConnectionViewModel?) {
                 item { DarkHealthCard("Account", account.message ?: "Signed out") }
             }
             is AccountState.SignedIn -> {
-                item { DarkHealthCard("Account", account.profile?.displayName ?: account.session.email) }
-                item { DarkHealthCard("Main health goal", account.profile?.mainGoal ?: "No goal saved") }
-                account.profile?.secondaryGoal?.let { item { DarkHealthCard("Secondary goal", it) } }
+                item { HubEntry(Icons.Rounded.Psychology, "Profile", account.profile?.displayName ?: account.session.email, "SIGNED IN") }
+                item { HubEntry(Icons.Rounded.Flag, "Main goal", account.profile?.mainGoal ?: "No goal saved", if (account.profile?.mainGoal == null) "SETUP NEEDED" else "PROFILE") }
+                account.profile?.secondaryGoal?.let { item { HubEntry(Icons.Rounded.Flag, "Secondary goal", it, "PROFILE") } }
                 account.profileError?.let { item { DarkHealthCard("Profile unavailable", it) } }
                 item { Button(onClick = { viewModel?.retryProfile() }, modifier = Modifier.fillMaxWidth()) { Text("Refresh profile") } }
                 item { Button(onClick = { viewModel?.signOut() }, modifier = Modifier.fillMaxWidth()) { Text("Sign out") } }
             }
         }
-        item { DarkHealthCard("AI guidance", "Unavailable until consent and evidence rules are approved") }
+        item { SectionHeading("TOPICS", "What Would You Like To Explore?") }
+        item { HubEntry(Icons.Rounded.NightsStay, "Sleep and recovery", "Review measured sleep before future coaching.", "COMING LATER") }
+        item { HubEntry(Icons.AutoMirrored.Rounded.DirectionsRun, "Movement and training", "Connect plans only after the shared contract is approved.", "COMING LATER") }
+        item { HubEntry(Icons.Rounded.Restaurant, "Fuel and nutrition", "No nutrition records are connected in Compose yet.", "NOT CONNECTED") }
+        item { HubEntry(Icons.Rounded.AutoAwesome, "AI conversation", "Unavailable until consent and evidence rules are approved.", "DISABLED") }
         item {
             Button(
                 onClick = { viewModel?.checkConnection() },
                 enabled = viewModel != null && state != SupabaseConnectionState.Checking,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Check connection") }
+        }
+    }
+}
+
+@Composable
+private fun ScreenHeading(label: String, title: String, detail: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, color = RunMateGreen, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+        Text(title, color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+        Text(detail, color = Color(0xFFB8C9C2), fontSize = 13.sp, lineHeight = 19.sp)
+    }
+}
+
+@Composable
+private fun SectionHeading(label: String, title: String) {
+    Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, color = RunMateGreen, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+        Text(title, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+@Composable
+private fun HubEntry(icon: ImageVector, title: String, detail: String, status: String) {
+    Card(colors = CardDefaults.cardColors(containerColor = DarkCard), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconBubble(icon, Color(0xFF243832), RunMateGreen)
+            Column(Modifier.padding(start = 13.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(detail, color = Color(0xFFB8C9C2), fontSize = 12.sp, lineHeight = 17.sp)
+                Text(status, color = RunMateGreen, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .7.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompactToolCard(icon: ImageVector, title: String, detail: String, modifier: Modifier = Modifier) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = DarkCard), shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(vertical = 14.dp, horizontal = 8.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, tint = RunMateGreen)
+            Text(title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+            Text(detail, color = Color(0xFF8FA69D), fontSize = 8.sp, textAlign = TextAlign.Center)
         }
     }
 }
@@ -391,9 +451,8 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp, 24.dp, 20.dp, 28.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item { Text("Health Dashboard", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold) }
+        item { ScreenHeading("YOUR HEALTH", "See What Is Shaping You", "Start with today’s measured signals, then review what is changing.") }
         item { Text("Compose experiment • read-only", color = RunMateGreen) }
-        item { DarkHealthCard("Recovery", "Uses the existing RunMate result; no duplicate calculation") }
         when (val current = state) {
             is HealthDashboardUiState.Loading -> item { LoadingState() }
             HealthDashboardUiState.Unavailable -> item { DarkHealthCard("Health Connect", "Unavailable on this device") }
@@ -408,13 +467,18 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
                 }
             }
             is HealthDashboardUiState.Content -> {
-                item { DarkHealthCard("Health Connect", "Connected") }
-                item { DarkHealthCard("Sleep", HealthDisplayFormatter.sleep(current.data.sleep)) }
-                item { DarkHealthCard("Heart rate", HealthDisplayFormatter.heartRate(current.data.heartRate)) }
-                item { DarkHealthCard("HRV (RMSSD)", HealthDisplayFormatter.hrv(current.data.hrv)) }
-                item { DarkHealthCard("Respiratory rate", HealthDisplayFormatter.respiratoryRate(current.data.respiratoryRate)) }
-                item { DarkHealthCard("Latest activity", HealthDisplayFormatter.activity(current.data.latestActivity)) }
-                item { DarkHealthCard("Steps today", HealthDisplayFormatter.steps(current.data.stepsToday)) }
+                item { SectionHeading("OVERVIEW", "Your Body At A Glance") }
+                item { HubEntry(Icons.Rounded.NightsStay, "Sleep", HealthDisplayFormatter.sleep(current.data.sleep), if (current.data.sleep == null) "NO DATA" else "MEASURED") }
+                item { HubEntry(Icons.Rounded.Favorite, "Heart and HRV", "${HealthDisplayFormatter.heartRate(current.data.heartRate)} • ${HealthDisplayFormatter.hrv(current.data.hrv)}", "HEALTH CONNECT") }
+                item { HubEntry(Icons.Rounded.MonitorHeart, "Respiratory rate", HealthDisplayFormatter.respiratoryRate(current.data.respiratoryRate), if (current.data.respiratoryRate == null) "NO DATA" else "MEASURED") }
+                item { SectionHeading("TRENDS", "See What Is Changing") }
+                item { HubEntry(Icons.Rounded.Insights, "Seven-day signals", "Sleep and heart history are available on the measured timeline.", "7 DAYS") }
+                item { HubEntry(Icons.Rounded.Restaurant, "Nutrition", "No nutrition history is connected in Compose yet.", "NOT CONNECTED") }
+                item { SectionHeading("BODY", "Longer-Term Signals") }
+                item { HubEntry(Icons.Rounded.Scale, "Body weight", "Weight permission and trend are not enabled yet.", "NOT CONNECTED") }
+                item { HubEntry(Icons.Rounded.Psychology, "Stress and mental wellbeing", "A consent-first input flow is not implemented yet.", "PLANNED") }
+                item { SectionHeading("DATA SOURCES", "Connected Health Data") }
+                item { HubEntry(Icons.Rounded.Favorite, "Health Connect", "Last synced ${HealthDisplayFormatter.time(current.data.syncedAt)}", "CONNECTED • READ ONLY") }
                 item { Button(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.Refresh, null); Text(" Refresh") } }
             }
             is HealthDashboardUiState.Error -> {
