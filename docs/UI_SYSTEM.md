@@ -31,7 +31,7 @@ The prototype uses the Android system sans font to avoid an unverified font-load
 | Role | Size | Weight | Line height | Usage |
 |---|---:|---:|---:|---|
 | Display | 28sp | 800 | 34sp | One primary page greeting/title |
-| Hero title | 20sp | 800 | 26sp | Readiness headline |
+| Hero title | 20-24sp | 800 | 26-30sp | At-a-glance body picture headline |
 | Section title | 17-18sp | 800 | 24sp | Card title |
 | Body | 13-14sp | 400-600 | 19-21sp | Explanations and values |
 | Label | 10-11sp | 700-800 | 14sp | Eyebrows, chart labels, badges |

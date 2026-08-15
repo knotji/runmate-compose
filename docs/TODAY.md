@@ -6,12 +6,22 @@ Today is the health-first home of WholeMate. It presents the minimum complete pi
 
 ## Information order
 
-1. Health Connect availability, permission, refresh, and measured signal count.
-2. User-selected focus for the day.
-3. Latest measured Sleep, Heart Rate, HRV, Respiratory Rate, and Activity records with source and sync time.
-4. Deterministic personal-baseline comparisons when sufficient history exists.
-5. Optional user-reported Stress, Mood, and Energy check-in.
-6. Seven-day measured chart.
+1. At-a-glance body picture: today's measured Sleep and Heart values, neutral baseline deltas, Mind check-in status, data availability, and selected focus.
+2. Health Connect permission and refresh action when attention is required.
+3. User-selected focus for the day.
+4. Latest measured Sleep, Heart Rate, HRV, Respiratory Rate, and Activity records with source and sync time.
+5. Deterministic personal-baseline comparisons when sufficient history exists.
+6. Optional user-reported Stress, Mood, and Energy check-in.
+7. Seven-day measured chart.
+
+## At-a-glance body picture
+
+- The first loaded hero must answer what is available today without requiring scroll.
+- Sleep and Heart tiles use today's seven-day-trend record, never an older 30-day latest value.
+- Baseline deltas remain neutral numeric differences and are marked `VS BASE`.
+- Mind displays only a user-entered Stress value; it never infers stress from heart or sleep records.
+- Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
+- The hero explicitly states that AI interpretation is not active.
 
 ## Evidence classes
 

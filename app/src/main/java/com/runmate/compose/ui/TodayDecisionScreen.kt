@@ -119,6 +119,7 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?, todayViewModel: To
                 HealthStatusHero(
                     state = state,
                     data = content,
+                    userState = userState,
                     onRefresh = { viewModel?.refresh() },
                     onPermission = {
                         val missing = (state as? HealthDashboardUiState.PermissionRequired)?.missing
@@ -269,6 +270,7 @@ private fun StatusBadge(text: String, positive: Boolean) {
 private fun HealthStatusHero(
     state: HealthDashboardUiState,
     data: HealthDashboardData?,
+    userState: TodayUserState,
     onRefresh: () -> Unit,
     onPermission: () -> Unit,
 ) {
@@ -294,8 +296,8 @@ private fun HealthStatusHero(
         }
         is HealthDashboardUiState.Content -> {
             val available = listOf(data?.sleep, data?.heartRate, data?.hrv, data?.respiratoryRate, data?.latestActivity).count { it != null }
-            title = "$available of 5 signals available"
-            detail = "Measured records only. No recovery score or recommendation is generated."
+            title = "Today's body picture"
+            detail = "$available of 5 measured signals  •  Focus: ${userState.focus.label}"
         }
     }
 
@@ -322,6 +324,10 @@ private fun HealthStatusHero(
                 }
             }
             Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
+            if (data != null) {
+                BodySnapshotRow(data, userState)
+                Text("Facts and your check-in only • no AI interpretation yet", color = Color.White.copy(.58f), fontSize = 9.sp)
+            }
             if (state is HealthDashboardUiState.PermissionRequired) {
                 Button(
                     onClick = onPermission,
@@ -334,6 +340,58 @@ private fun HealthStatusHero(
                 ) { Text("Try again", fontWeight = FontWeight.Bold) }
             }
         }
+    }
+}
+
+@Composable
+private fun BodySnapshotRow(data: HealthDashboardData, userState: TodayUserState) {
+    val sleepToday = data.sevenDayTrend.lastOrNull()?.sleepHours
+    val heartToday = data.sevenDayTrend.lastOrNull()?.averageHeartRate
+    val sleepBaseline = PersonalBaseline.sleep(data.sevenDayTrend)
+    val heartBaseline = PersonalBaseline.heartRate(data.sevenDayTrend)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SnapshotTile(
+            label = "SLEEP",
+            value = sleepToday?.let { "%.1fh".format(it) } ?: "--",
+            context = baselineContext(sleepBaseline, "h", 1),
+            modifier = Modifier.weight(1f),
+        )
+        SnapshotTile(
+            label = "HEART",
+            value = heartToday?.let { "${it.toInt()} bpm" } ?: "--",
+            context = baselineContext(heartBaseline, "bpm", 0),
+            modifier = Modifier.weight(1f),
+        )
+        SnapshotTile(
+            label = "MIND",
+            value = userState.stress?.let { "Stress $it/5" } ?: "--",
+            context = when {
+                userState.checkInSavedAt != null -> "USER REPORTED"
+                userState.stress != null || userState.mood != null || userState.energy != null -> "NOT SAVED"
+                else -> "CHECK IN"
+            },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+private fun baselineContext(result: BaselineResult, unit: String, decimals: Int): String = when (result) {
+    is BaselineResult.Available -> {
+        val delta = result.comparison.difference
+        val value = if (decimals == 0) delta.toInt().toString() else "%.1f".format(delta)
+        "${if (delta > 0) "+" else ""}$value$unit VS BASE"
+    }
+    is BaselineResult.InsufficientData -> "NO BASELINE"
+}
+
+@Composable
+private fun SnapshotTile(label: String, value: String, context: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(.09f)).padding(horizontal = 10.dp, vertical = 11.dp),
+    ) {
+        Text(label, color = Cyan, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
+        Text(value, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        Text(context, color = Color.White.copy(.55f), fontSize = 7.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
