@@ -8,7 +8,7 @@ State has one owner at each lifetime:
 |---|---|---|
 | Process/session | `RunMateAppStore` | selected destination, authenticated account when added |
 | Screen | screen ViewModel | Health query state, recovery snapshot state |
-| Transient UI | `rememberSaveable` | selected chart point, expanded training card, open explanation sheet |
+| Transient UI | `rememberSaveable` | selected chart metric and point |
 | Durable server | Supabase through a repository | profile and account-backed product data |
 | Device health | Health Connect through a repository | sleep, heart rate, workout records |
 
@@ -50,7 +50,7 @@ Boot failure must expose retry/logout as applicable. Never show an indefinite lo
 
 ## Recovery snapshot states
 
-- `NotConfigured`: no cross-client provider exists; show Preview or Unavailable, never calculate a substitute.
+- `NotConfigured`: no cross-client provider exists; show Unavailable, never calculate or display a substitute.
 - `Loading`: provider request in progress.
 - `Available`: version, date, ranges, and model identity passed validation.
 - `Rejected`: payload exists but violates the contract; do not display its scores.

@@ -5,6 +5,7 @@ An isolated Android Jetpack Compose experiment for RunMate. It does not replace 
 ## Engineering contracts
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Roadmap](docs/ROADMAP.md)
 - [UI system](docs/UI_SYSTEM.md)
 - [State and loading](docs/STATE_AND_LOADING.md)
 - [Recovery contract](docs/RECOVERY_CONTRACT.md)

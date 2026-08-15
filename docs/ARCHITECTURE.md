@@ -51,4 +51,4 @@ Auth is intentionally not wired in this foundation commit because no shared Reco
 - Every functional change updates relevant contracts and tests.
 - Firebase builds are experiments, not production RunMate releases.
 - `nativeHealthDashboard` remains false by default.
-- Release notes must distinguish measured data, derived output, and mock UI.
+- Release notes must identify the real providers used and explicitly call out any unavailable product output.
