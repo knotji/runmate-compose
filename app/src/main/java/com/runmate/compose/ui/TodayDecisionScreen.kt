@@ -66,6 +66,8 @@ import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -76,6 +78,7 @@ private val DecisionCanvas = Color(0xFFF3F8FC)
 private val DecisionCyan = Color(0xFF9BE7F5)
 private val DecisionGold = Color(0xFFFFD26F)
 private val DecisionSky = Color(0xFFB7D8FF)
+private val DecisionNight = Color(0xFF071C31)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,10 +101,10 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { DecisionHeader(content != null) }
-            item { DecisionRecoveryHero(onExplain = { explanationOpen = true }) }
+            item { DecisionRecoveryHero(content, onExplain = { explanationOpen = true }) }
+            item { InteractiveTrainingCard() }
             item { RealSignalsCard(content, refreshing) }
             item { SevenDayChart(content?.sevenDayTrend.orEmpty()) }
-            item { InteractiveTrainingCard() }
             item { DecisionInsightCard(content) }
             item {
                 Text(
@@ -123,11 +126,14 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
 
 @Composable
 private fun DecisionHeader(connected: Boolean) {
+    val todayLabel = remember {
+        LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.ENGLISH)).uppercase(Locale.ENGLISH)
+    }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("TODAY • DECISION BUILD", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
-            Text("Good morning", color = DecisionInk, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Text(if (connected) "Health Connect data is live" else "Pull down to read health signals", color = DecisionMuted, fontSize = 13.sp)
+            Text(todayLabel, color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+            Text("Today", color = DecisionInk, fontSize = 32.sp, fontWeight = FontWeight.Black)
+            Text(if (connected) "Your health signals are up to date" else "Pull down to read health signals", color = DecisionMuted, fontSize = 13.sp)
         }
         Box(
             Modifier.clip(RoundedCornerShape(99.dp)).background(if (connected) Color(0xFFDDF5E7) else Color(0xFFFFF1D6)).padding(horizontal = 10.dp, vertical = 7.dp),
@@ -138,35 +144,57 @@ private fun DecisionHeader(connected: Boolean) {
 }
 
 @Composable
-private fun DecisionRecoveryHero(onExplain: () -> Unit) {
+private fun DecisionRecoveryHero(data: HealthDashboardData?, onExplain: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     Card(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onExplain()
         },
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(12.dp),
     ) {
         Column(
-            Modifier.background(Brush.linearGradient(listOf(Color(0xFF135D79), Color(0xFF1B829A), Color(0xFF269FAF)))).padding(22.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            Modifier.background(Brush.linearGradient(listOf(DecisionNight, Color(0xFF0B4057), Color(0xFF147B89)))).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("RUNMATE READINESS • PREVIEW", color = Color.White.copy(.7f), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Ready for quality work", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("TODAY'S DECISION  •  PREVIEW", color = DecisionCyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+                    Text("Keep it easy.", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black)
+                    Text("Build aerobic fitness without borrowing from tomorrow.", color = Color.White.copy(.72f), fontSize = 13.sp, lineHeight = 18.sp)
                 }
-                Text("Tap to explain", color = Color.White.copy(.8f), fontSize = 11.sp)
+                Box(Modifier.size(94.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator({ 1f }, Modifier.fillMaxSize(), color = Color.White.copy(.12f), strokeWidth = 8.dp)
+                    CircularProgressIndicator({ .78f }, Modifier.fillMaxSize(), color = DecisionCyan, strokeWidth = 8.dp, strokeCap = StrokeCap.Round)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("78", color = Color.White, fontSize = 29.sp, fontWeight = FontWeight.Black)
+                        Text("READY", color = Color.White.copy(.65f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                AnimatedDial("Recovery", 78, DecisionCyan)
-                AnimatedDial("Strain", 42, DecisionGold)
-                AnimatedDial("Sleep", 86, DecisionSky)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HeroMetric("SLEEP", data?.sleep?.substringBefore(" ") ?: "--", if (data == null) "NOT LOADED" else "MEASURED", Modifier.weight(1f))
+                HeroMetric("STRAIN", "4.2", "PREVIEW", Modifier.weight(1f))
+                HeroMetric("ENERGY", "82", "PREVIEW", Modifier.weight(1f))
             }
-            Text("Sleep supported your recovery. Keep today controlled and leave room for tomorrow.", color = Color.White.copy(.86f), fontSize = 13.sp, lineHeight = 19.sp)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Why this decision?", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("VIEW SIGNALS  →", color = DecisionCyan, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+            }
         }
+    }
+}
+
+@Composable
+private fun HeroMetric(label: String, value: String, source: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier.clip(RoundedCornerShape(16.dp)).background(Color.White.copy(.08f)).padding(horizontal = 12.dp, vertical = 11.dp),
+    ) {
+        Text(label, color = Color.White.copy(.58f), fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
+        Text(value, color = Color.White, fontSize = 19.sp, fontWeight = FontWeight.Black)
+        Text(source, color = if (source == "MEASURED") DecisionCyan else DecisionGold, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
@@ -191,7 +219,7 @@ private fun RealSignalsCard(data: HealthDashboardData?, refreshing: Boolean) = D
         DecisionIcon(Icons.Rounded.Favorite, Color(0xFFE1F4FA), DecisionOcean)
         Column(Modifier.padding(start = 14.dp).weight(1f)) {
             Text("MEASURED SIGNALS", color = DecisionOcean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
-            Text(if (refreshing) "Refreshing Health Connect…" else "Latest from Health Connect", color = DecisionInk, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+            Text(if (refreshing) "Refreshing Health Connect…" else "What shaped today", color = DecisionInk, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
         }
     }
     Spacer(Modifier.height(14.dp))
