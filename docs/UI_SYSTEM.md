@@ -6,6 +6,8 @@ This file is the implementation contract for visual work. A screen change is inc
 
 WholeMate is calm, precise, supportive, and human. It must not look clinical, gamified, alarmist, or exclusively athletic. Health facts, user reports, calculations, and AI interpretations must remain visually distinguishable.
 
+The existing RunMate mobile visual language is an approved baseline: pale health canvas, teal gradient hero, three circular metrics, high-radius white cards, compact uppercase evidence labels, and stable bottom navigation. Compose may refine accessibility and performance while retaining this familiarity.
+
 ## Logo and launcher
 
 - Reuse the approved RunMate launcher artwork from `runmate-mobile`; do not redraw or AI-generate the mark.

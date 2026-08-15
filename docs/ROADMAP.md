@@ -15,7 +15,7 @@ The working product concept and AI/mental-health boundaries are defined in `PROD
 - Keep Health Connect access read-only until a separate write use case is approved.
 - Make every milestone independently releasable and removable.
 - Update the relevant contract and tests with every behavior change.
-- Build each capability as a greenfield Compose implementation; do not copy or mechanically port `runmate-mobile` source.
+- Build each capability as a native Compose implementation. Proven `runmate-mobile` UX patterns may be reproduced, but source and business logic are not mechanically ported.
 
 ## Current baseline
 
@@ -149,7 +149,7 @@ Decision rules:
 - Compose Multiplatform or an iOS client.
 - Production database migrations or health-data writes.
 - Full migration away from `runmate-mobile`.
-- Screen-for-screen or source-for-source parity with `runmate-mobile`.
+- Source-for-source parity with `runmate-mobile`; selective UX parity is allowed when it supports the health-first product.
 
 ## Next executable slice
 

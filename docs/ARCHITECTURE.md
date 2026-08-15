@@ -16,14 +16,15 @@ The application is organized around understanding personal health over time. Run
 
 ## Greenfield implementation boundary
 
-`runmate-compose` is not a source-code port of `runmate-mobile`. Capabilities are designed and implemented incrementally inside this repository.
+WholeMate is not a source-code port of `runmate-mobile`, but the existing product may be used as an approved UX and visual baseline. Capabilities are still implemented incrementally inside this repository.
 
-- Do not copy screens, components, stores, CSS, TypeScript business logic, or project structure from `runmate-mobile`.
-- Use `runmate-mobile` only to understand verified user behavior, existing data contracts, compatibility constraints, and baseline results.
+- Reproduce proven information architecture, visual rhythm, navigation patterns, and interaction behavior when doing so reduces user relearning.
+- Do not copy components, stores, CSS, TypeScript business logic, or project structure from `runmate-mobile`; implement the approved behavior natively in Compose.
+- Use `runmate-mobile` to understand verified user behavior, visual baselines, existing data contracts, compatibility constraints, and baseline results.
 - Reuse an asset only when it is an approved shared brand asset, such as the RunMate launcher logo, and record its origin.
 - Integrate through explicit versioned contracts rather than translating implementation details between languages.
 - A capability enters Compose only when its own scope, states, tests, and device acceptance criteria are defined.
-- Do not pursue screen-for-screen parity unless a later product decision explicitly requires it.
+- Screen-level UX parity is allowed when explicitly useful, but health-first hierarchy takes precedence over pixel parity.
 
 ## Layers
 

@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-08-15 - RunMate UX baseline with health-first hierarchy
+
+Use `runmate-mobile` as an approved visual and interaction baseline, including the familiar three-dial Today hero, card rhythm, pull-to-refresh, and the conceptual `Today / Health / Move / Coach` navigation. Reimplement behavior in Compose rather than copying Ionic/CSS/state code. WholeMate changes the hierarchy: Health is the product axis, Move is one capability, and Coach must reason from evidence across body and mind rather than defaulting to running plans.
+
 ## 2026-08-15 - WholeMate working product name
 
 Use **WholeMate** as the working user-facing name for the health-first experiment. It represents whole-body and mind support while retaining the companion meaning of “Mate.” Keep the existing package, Firebase app, repository, and internal identifiers until formal brand clearance and a planned identity migration.
