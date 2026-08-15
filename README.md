@@ -78,7 +78,7 @@ The production bundle is written to:
 shared/build/dist/wasmJs/productionExecutable
 ```
 
-The playground includes deterministic `available`, `partial`, `missing`, `loading`, and `error` fixtures. It has no Supabase authentication, Health Connect emulation, recovery calculation, or production deployment contract. A browser with WasmGC support is required.
+The design lab includes the IA v1 shell for Today, Health, Move, and You plus deterministic `available`, `partial`, `missing`, `loading`, and `error` fixtures. The fixture switcher is development chrome, not product UI. The lab has no Supabase authentication, Health Connect emulation, recovery calculation, or production deployment contract. A browser with WasmGC support is required.
 
 ## Firebase App Distribution
 

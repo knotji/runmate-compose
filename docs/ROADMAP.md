@@ -26,6 +26,7 @@ Missing stays missing. AI is optional to comprehension. Health-provider reads re
 - [x] Google OAuth PKCE, Android Keystore-backed session restore/refresh/logout, owner profile, and read-only history.
 - [x] Current Android implementation has Today, Health, Move, and Coach navigation on one visual system.
 - [x] IA v1 target is locked as Today, Health, Move, and You; code migration remains pending.
+- [x] Web design lab exposes the four-destination IA shell with deterministic ready, partial, missing, loading, and error states.
 - [x] Initial Recovery, Strain, and Sleep hero without fabricated unavailable scores.
 - [x] Deterministic personal baselines with missing-data rules.
 - [x] Firebase App Distribution and Samsung tester flow.
@@ -174,4 +175,4 @@ An iOS client is enabled work when justified, not forbidden work and not a claim
 
 ## Next executable slice
 
-Implement the four-destination shell in the Web design lab using the IA v1 hierarchy: Today, Health, Move, and You. Start with deterministic demo states and rough interaction structure; do not add visual polish, shared architecture, provider capabilities, or recovery changes in this slice.
+Review the four-destination shell visually in the Web design lab and adjust hierarchy only where a destination's purpose is unclear without documentation. Stabilize Today first; do not add visual polish, shared architecture, provider capabilities, or recovery changes during this review.
