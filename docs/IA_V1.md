@@ -130,7 +130,7 @@ These describe hierarchy, not visual style or final copy.
  Today      Health       Move       You
 ```
 
-Rules: Body Picture remains above the fold; shaping and next-step blocks disappear honestly when unsupported; Today never becomes a long metric feed.
+Rules: Body Picture remains above the fold; Body Picture, shaping, and next-step blocks keep the same semantic skeleton in every load state and express absence honestly inside it; Today never becomes a long metric feed.
 
 ### Health
 

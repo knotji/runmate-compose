@@ -84,7 +84,11 @@ fun WebTodayPlayground(provider: DemoHealthProvider = remember { DemoHealthProvi
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
                     when (destination) {
-                        LabDestination.TODAY -> TodayPage(state)
+                        LabDestination.TODAY -> TodayPage(
+                            state = state,
+                            onOpenHealth = { destination = LabDestination.HEALTH },
+                            onRetry = { scenario = DemoTodayScenario.AVAILABLE },
+                        )
                         LabDestination.HEALTH -> HealthPage(scenario)
                         LabDestination.MOVE -> MovePage(scenario)
                         LabDestination.YOU -> YouPage(scenario)
@@ -141,36 +145,40 @@ private fun PageHeader(eyebrow: String, title: String, summary: String) {
 }
 
 @Composable
-private fun TodayPage(state: LoadState<BodyPictureModel>) {
+private fun TodayPage(
+    state: LoadState<BodyPictureModel>,
+    onOpenHealth: () -> Unit,
+    onRetry: () -> Unit,
+) {
     val model = state.visibleValue()
-    PageHeader("TODAY - AUG 15", "Your body today", todaySummary(state, model))
+    val usefulSignals = model?.signals.orEmpty().filter { it.value != null }
+    PageHeader("TODAY - AUG 15", todayHeadline(state, model), todaySummary(state, model))
 
     SectionCard("BODY PICTURE", trailing = model?.completeness?.label()) {
         if (model == null) {
             LoadingLine("Building today's picture...")
+        } else if (usefulSignals.isEmpty()) {
+            Text("No measured signals are available for today's picture.", color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text("WholeMate will not fill missing evidence with scores or placeholders.", color = Muted, fontSize = 12.sp)
         } else {
-            SignalRow(model.signals)
-            Text("Updated from deterministic demo evidence", color = Muted, fontSize = 10.sp)
+            SignalRow(usefulSignals)
+            Text(todayEvidenceStatus(state), color = Muted, fontSize = 10.sp)
         }
     }
 
-    when (state) {
-        is LoadState.Failed -> StatusCard("We could not refresh your evidence", state.message, DangerSoft, "Try again")
-        is LoadState.Loading -> StatusCard("Refreshing quietly", "Your previous picture remains visible while new evidence loads.", AmberSoft)
-        else -> {
-            val usefulSignals = model?.signals.orEmpty().filter { it.value != null }
-            if (usefulSignals.isNotEmpty()) {
-                SectionCard("WHAT IS SHAPING TODAY", trailing = "View why") {
-                    Text("Sleep is the clearest signal in today's available evidence.", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Your other signals are steady or do not have enough data yet.", color = Muted, fontSize = 13.sp)
-                }
-                SectionCard("WHAT NEXT") {
-                    Text("Keep today ordinary and protect a consistent wind-down tonight.", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    ActionPill("Keep this in mind")
-                }
-            } else {
-                StatusCard("Not enough evidence yet", "WholeMate will not invent a daily score. Connect or refresh a source when you are ready.", AmberSoft, "Review access")
-            }
+    SectionCard("WHAT IS SHAPING TODAY") {
+        Text(todayShapingTitle(state, usefulSignals), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Text(todayShapingDetail(state, usefulSignals), color = Muted, fontSize = 13.sp)
+        if (usefulSignals.isNotEmpty()) {
+            ActionPill("Review sleep evidence", onClick = onOpenHealth)
+        }
+    }
+
+    SectionCard("WHAT NEXT") {
+        Text(todayNextStep(state, usefulSignals), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        when {
+            state is LoadState.Failed -> ActionPill("Retry demo refresh", onClick = onRetry)
+            usefulSignals.isEmpty() -> ActionPill("Review data sources in Health", onClick = onOpenHealth)
         }
     }
 }
@@ -312,13 +320,14 @@ private fun ControlRow(label: String, detail: String) {
 }
 
 @Composable
-private fun ActionPill(label: String) {
+private fun ActionPill(label: String, onClick: (() -> Unit)? = null) {
+    val actionModifier = if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)
     Text(
         label,
         color = Moss,
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier.background(MossSoft, RoundedCornerShape(50)).padding(horizontal = 13.dp, vertical = 8.dp),
+        modifier = actionModifier.background(MossSoft, RoundedCornerShape(50)).padding(horizontal = 13.dp, vertical = 8.dp),
     )
 }
 
@@ -364,9 +373,47 @@ private fun DataCompleteness.label(): String = when (this) {
     DataCompleteness.UNAVAILABLE -> "No evidence"
 }
 
+private fun todayHeadline(state: LoadState<BodyPictureModel>, model: BodyPictureModel?): String = when {
+    state is LoadState.Failed -> "Your last known picture is incomplete"
+    state is LoadState.Loading -> "Today's picture is still updating"
+    model?.completeness == DataCompleteness.COMPLETE -> "Your body looks steady today"
+    model?.signals?.any { it.value != null } == true -> "Today's picture is incomplete"
+    else -> "Not enough evidence for today"
+}
+
 private fun todaySummary(state: LoadState<BodyPictureModel>, model: BodyPictureModel?): String = when {
-    state is LoadState.Failed -> "Your last known picture is still here, but refresh needs attention."
-    state is LoadState.Loading -> "Refreshing the evidence without hiding what you already know."
-    model?.signals?.any { it.value != null } == true -> "You have enough evidence for a simple, honest picture of today."
-    else -> "There is not enough evidence to describe today yet."
+    state is LoadState.Failed -> "The last available evidence remains visible, but the latest refresh failed."
+    state is LoadState.Loading -> "Last available evidence stays visible while WholeMate refreshes."
+    model?.completeness == DataCompleteness.COMPLETE -> "Sleep, resting heart rate, and movement show no strong warning signal."
+    model?.signals?.any { it.value != null } == true -> "Sleep is available, but there is not enough evidence for a complete body picture."
+    else -> "WholeMate cannot describe your state without measured evidence."
+}
+
+private fun todayEvidenceStatus(state: LoadState<BodyPictureModel>): String = when (state) {
+    is LoadState.Failed -> "Last available evidence - refresh failed"
+    is LoadState.Loading -> "Last available evidence - refreshing"
+    else -> "Updated from deterministic demo evidence"
+}
+
+private fun todayShapingTitle(state: LoadState<BodyPictureModel>, usefulSignals: List<BodyPictureSignal>): String = when {
+    usefulSignals.isEmpty() -> "No shaping factor can be identified yet."
+    state is LoadState.Failed -> "Sleep was the clearest signal in the last available evidence."
+    state is LoadState.Loading -> "Sleep is the clearest signal in the picture being refreshed."
+    else -> "Sleep is the clearest signal in today's available evidence."
+}
+
+private fun todayShapingDetail(state: LoadState<BodyPictureModel>, usefulSignals: List<BodyPictureSignal>): String = when {
+    usefulSignals.isEmpty() -> "Missing evidence stays missing; no cause or pattern is inferred."
+    state is LoadState.Failed -> "No newer conclusion is shown until refresh succeeds."
+    state is LoadState.Loading -> "No new conclusion is shown until refresh finishes."
+    usefulSignals.size == 1 -> "Other body signals do not have enough data, so no recovery or strain conclusion is made."
+    else -> "Other available signals are steady or do not have enough evidence to outweigh sleep."
+}
+
+private fun todayNextStep(state: LoadState<BodyPictureModel>, usefulSignals: List<BodyPictureSignal>): String = when {
+    state is LoadState.Failed -> "Retry the demo refresh before using this picture for a new decision."
+    state is LoadState.Loading -> "Wait for refresh to finish; keep using only the last available picture."
+    usefulSignals.isEmpty() -> "Open Health and review data-source access before drawing a conclusion."
+    usefulSignals.size == 1 -> "Keep your usual routine today and check again when more evidence arrives."
+    else -> "Keep your regular wind-down time tonight."
 }
