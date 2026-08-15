@@ -8,7 +8,7 @@ Today is intentionally short: date, evidence-status badge, one Body Picture hero
 
 ## Information order
 
-1. **Body Picture — How am I today?** Up to three or four useful signals selected from available evidence and active goals. The UI renders only signals with approved evidence; Recovery and Strain do not receive reserved positions while unavailable.
+1. **Body Picture — How am I today?** The v1 hero keeps three stable positions: Recovery, Strain, and Sleep. A missing value remains visibly unavailable rather than becoming zero or making the ring disappear.
 2. **What is shaping today — Why?** The smallest deterministic explanation supported by the available evidence, with a contextual route to evidence detail in Health.
 3. **What next — What can I do?** One deterministic action, an access/refresh resolution, or an honest statement that there is not enough evidence.
 
@@ -17,10 +17,12 @@ This semantic skeleton remains present in Ready, Partial, Missing, Loading, and 
 ## At-a-glance body picture
 
 - The first loaded hero must answer what is available today without requiring scroll.
-- Signal models carry label, value, evidence class, freshness, availability, and action target; the UI must not hard-code product meaning to a fixed ring position.
+- Signal models carry label, value, unit, evidence class, freshness, availability, and action target. The three rings share a visual language, not a mathematical scale.
 - A current-day signal never silently substitutes an older latest value.
 - Baseline deltas remain neutral numeric differences and are marked `VS BASE`.
-- Metric circles are adaptive presentation, not fixed Recovery/Strain/Sleep positions. Unavailable Recovery or Strain is omitted from the glanceable picture; WholeMate never derives either score locally without an approved versioned model.
+- Recovery displays a versioned 0-100 estimate as a percentage. Sleep displays measured duration and uses a data-presence ring until a sleep-need contract exists. Strain remains `--` with no progress until its meaning, formula, and scale are approved.
+- `What is shaping today` ranks one or two deterministic baseline comparisons. It explains evidence and never creates a medical or causal interpretation.
+- `What next` is selected separately by a bounded action policy. Every action must trace to shaping evidence, freshness, or access state; Recovery score alone never produces a training recommendation.
 - Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
 - Deterministic facts remain comprehensible when AI interpretation is unavailable.
 

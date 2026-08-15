@@ -2,7 +2,9 @@ package com.runmate.compose.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import org.junit.Rule
 import org.junit.Test
@@ -20,7 +22,7 @@ class NativeHealthAppTest {
     @Test
     fun enabledExperimentOpensTodayAndNavigatesToHealth() {
         compose.setContent { NativeHealthApp(experimentEnabled = true) }
-        compose.onNodeWithText("Today").assertIsDisplayed()
+        compose.onAllNodesWithText("Today").onFirst().assertIsDisplayed()
         compose.onNodeWithText("Health Connect unavailable").assertIsDisplayed()
         compose.onNodeWithText("WHAT IS SHAPING TODAY").assertIsDisplayed()
         compose.onNodeWithText("WHAT NEXT").assertIsDisplayed()

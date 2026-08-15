@@ -58,7 +58,7 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
                         data = result.data,
                         bodyPicture = bodyPicturePolicy.select(
                             BodyPictureInput(
-                                facts = result.data.facts,
+                                facts = result.data.facts.withCalculatedRecovery(result.data),
                                 trend = result.data.sevenDayTrend,
                                 effectiveAt = Instant.fromEpochMilliseconds(result.data.syncedAt.toEpochMilli()),
                                 timeZone = TimeZone.currentSystemDefault(),
@@ -69,6 +69,34 @@ class HealthDashboardViewModel(application: Application) : AndroidViewModel(appl
             } catch (error: Exception) {
                 HealthDashboardUiState.Error(error.message ?: "Health data could not be read", previous, previousBodyPicture)
             }
+        }
+    }
+
+    private fun List<HealthFact>.withCalculatedRecovery(data: HealthDashboardData): List<HealthFact> {
+        val sleep = filterIsInstance<SleepFact>().maxByOrNull(HealthFact::observedAt)
+        val hrv = filterIsInstance<HrvFact>().maxByOrNull(HealthFact::observedAt)
+        val restingHeartRate = filterIsInstance<RestingHeartRateFact>().maxByOrNull(HealthFact::observedAt)
+        val sleepingHeartRate = filterIsInstance<SleepingHeartRateFact>().maxByOrNull(HealthFact::observedAt)
+        val result = WholeMateBodyScoreCalculator.recovery(
+            RecoveryEvidence(
+                sleepHours = sleep?.duration?.inWholeMinutes?.div(60.0),
+                sleepBaselineHours = data.sevenDayTrend.dropLast(1).mapNotNull(DailyHealthPoint::sleepHours),
+                hrvRmssdMillis = hrv?.rmssdMillis,
+                hrvBaselineMillis = data.sevenDayTrend.dropLast(1).mapNotNull(DailyHealthPoint::hrvRmssdMillis),
+                restingHeartRateBpm = restingHeartRate?.beatsPerMinute?.toDouble(),
+                restingHeartRateBaselineBpm = data.sevenDayTrend.dropLast(1).mapNotNull(DailyHealthPoint::restingHeartRateBpm),
+                sleepingHeartRateBpm = sleepingHeartRate?.beatsPerMinute,
+                sleepingHeartRateBaselineBpm = data.sevenDayTrend.dropLast(1).mapNotNull(DailyHealthPoint::sleepingHeartRateBpm),
+            ),
+        )
+        return when (result) {
+            is ScoreCalculation.Available -> this + RecoveryScoreFact(
+                score = result.value,
+                observedAt = data.facts.maxOfOrNull(HealthFact::observedAt) ?: Instant.fromEpochMilliseconds(data.syncedAt.toEpochMilli()),
+                source = HealthSource(result.modelVersion),
+                freshness = Freshness.FRESH,
+            )
+            is ScoreCalculation.InsufficientData -> this
         }
     }
 }

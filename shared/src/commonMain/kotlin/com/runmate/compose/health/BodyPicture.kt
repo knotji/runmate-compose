@@ -2,7 +2,6 @@ package com.runmate.compose.health
 
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.math.round
 import kotlin.time.Instant
 
 enum class BodyPictureSignalId { RECOVERY, STRAIN, SLEEP, RESTING_HEART_RATE, STRESS, MOVEMENT }
@@ -48,8 +47,8 @@ class InitialBodyPicturePolicy(
 ) : BodyPicturePolicy {
     override fun select(input: BodyPictureInput): BodyPictureModel {
         val candidates = mapOf(
-            BodyPictureSignalId.RECOVERY to unavailable(BodyPictureSignalId.RECOVERY, "Recovery", SignalAvailability.NOT_CONNECTED, 100),
-            BodyPictureSignalId.STRAIN to unavailable(BodyPictureSignalId.STRAIN, "Strain", SignalAvailability.NOT_CONNECTED, 90),
+            BodyPictureSignalId.RECOVERY to recoverySignal(input),
+            BodyPictureSignalId.STRAIN to strainSignal(input),
             BodyPictureSignalId.SLEEP to sleepSignal(input),
         )
         val signals = order.mapNotNull(candidates::get).map { signal ->
@@ -70,6 +69,52 @@ class InitialBodyPicturePolicy(
         )
     }
 
+    private fun recoverySignal(input: BodyPictureInput): BodyPictureSignal {
+        val fact = input.facts.filterIsInstance<RecoveryScoreFact>().maxByOrNull(HealthFact::observedAt)
+            ?: return unavailable(BodyPictureSignalId.RECOVERY, "Recovery", SignalAvailability.INSUFFICIENT_DATA, 100)
+        return scoreSignal(
+            id = BodyPictureSignalId.RECOVERY,
+            label = "Recovery",
+            value = fact.score.toString(),
+            unit = "%",
+            fact = fact,
+            importance = 100,
+        )
+    }
+
+    private fun strainSignal(input: BodyPictureInput): BodyPictureSignal {
+        val fact = input.facts.filterIsInstance<StrainScoreFact>().maxByOrNull(HealthFact::observedAt)
+            ?: return unavailable(BodyPictureSignalId.STRAIN, "Strain", SignalAvailability.INSUFFICIENT_DATA, 90)
+        val value = fact.score.toString()
+        return scoreSignal(
+            id = BodyPictureSignalId.STRAIN,
+            label = "Strain",
+            value = value,
+            unit = null,
+            fact = fact,
+            importance = 90,
+        )
+    }
+
+    private fun scoreSignal(
+        id: BodyPictureSignalId,
+        label: String,
+        value: String,
+        unit: String?,
+        fact: HealthFact,
+        importance: Int,
+    ) = BodyPictureSignal(
+        id = id,
+        label = label,
+        value = value,
+        unit = unit,
+        evidenceClass = EvidenceClass.CALCULATED,
+        state = if (fact.freshness == Freshness.STALE) SignalAvailability.STALE else SignalAvailability.AVAILABLE,
+        freshness = fact.freshness,
+        source = fact.source,
+        importance = importance,
+    )
+
     private fun sleepSignal(input: BodyPictureInput): BodyPictureSignal {
         val sleep = input.facts.filterIsInstance<SleepFact>().maxByOrNull(HealthFact::observedAt)
             ?: return unavailable(BodyPictureSignalId.SLEEP, "Sleep", SignalAvailability.MISSING, 80)
@@ -80,12 +125,14 @@ class InitialBodyPicturePolicy(
             is BaselineResult.Available -> BaselineDelta(result.comparison.difference, "h", result.comparison.baselineSampleCount)
             is BaselineResult.InsufficientData -> null
         }
-        val hours = sleep.duration.inWholeMinutes / 60.0
+        val totalMinutes = sleep.duration.inWholeMinutes
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
         return BodyPictureSignal(
             id = BodyPictureSignalId.SLEEP,
             label = "Sleep",
-            value = (round(hours * 10.0) / 10.0).toString(),
-            unit = "h",
+            value = "${hours}h ${minutes}m",
+            unit = null,
             evidenceClass = EvidenceClass.MEASURED,
             state = if (sleep.freshness == Freshness.STALE) SignalAvailability.STALE else SignalAvailability.AVAILABLE,
             baselineDelta = baseline,

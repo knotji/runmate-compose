@@ -7,6 +7,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.RespiratoryRateRecord
+import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.AggregateRequest
@@ -23,6 +24,8 @@ import kotlin.time.Instant as KotlinInstant
 data class HealthDashboardData(
     val sleep: SleepSummary?,
     val heartRate: HeartRateSummary?,
+    val restingHeartRate: RestingHeartRateSummary?,
+    val sleepingHeartRate: SleepingHeartRateSummary?,
     val hrv: HrvSummary?,
     val respiratoryRate: RespiratoryRateSummary?,
     val latestActivity: ActivitySummary?,
@@ -40,9 +43,11 @@ sealed interface HealthLoadResult {
 
 class HealthDashboardRepository(private val context: Context) {
     companion object {
+        private const val MINIMUM_SLEEPING_HEART_RATE_SAMPLES = 30
         val permissions: Set<String> = setOf(
             HealthPermission.getReadPermission(SleepSessionRecord::class),
             HealthPermission.getReadPermission(HeartRateRecord::class),
+            HealthPermission.getReadPermission(RestingHeartRateRecord::class),
             HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class),
             HealthPermission.getReadPermission(RespiratoryRateRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
@@ -64,16 +69,27 @@ class HealthDashboardRepository(private val context: Context) {
             .records
         val heartRateRecords = client.readRecords(ReadRecordsRequest<HeartRateRecord>(range, pageSize = 1000))
             .records
-        val sleep = sleepRecords.maxByOrNull { it.endTime }
+        val restingHeartRateRecords = client.readRecords(ReadRecordsRequest<RestingHeartRateRecord>(range, pageSize = 100))
+            .records
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val sleep = SleepAggregation.longestForWakeDate(
+            intervals = sleepRecords.map {
+                SleepInterval(it.startTime, it.endTime, it.metadata.dataOrigin.packageName)
+            },
+            wakeDate = today,
+            zoneId = zone,
+        )
         val heartRate = heartRateRecords.maxByOrNull { it.endTime }
-        val hrv = client.readRecords(ReadRecordsRequest<HeartRateVariabilityRmssdRecord>(range, pageSize = 100))
-            .records.maxByOrNull { it.time }
+        val restingHeartRate = restingHeartRateRecords.maxByOrNull { it.time }
+        val hrvRecords = client.readRecords(ReadRecordsRequest<HeartRateVariabilityRmssdRecord>(range, pageSize = 100))
+            .records
+        val hrv = hrvRecords.maxByOrNull { it.time }
         val respiratoryRate = client.readRecords(ReadRecordsRequest<RespiratoryRateRecord>(range, pageSize = 100))
             .records.maxByOrNull { it.time }
         val latestActivity = client.readRecords(ReadRecordsRequest<ExerciseSessionRecord>(range, pageSize = 30))
             .records.maxByOrNull { it.endTime }
-        val zone = ZoneId.systemDefault()
-        val startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant()
+        val startOfToday = today.atStartOfDay(zone).toInstant()
         val stepsTotal = client.aggregate(
             AggregateRequest(
                 metrics = setOf(StepsRecord.COUNT_TOTAL),
@@ -81,9 +97,18 @@ class HealthDashboardRepository(private val context: Context) {
             ),
         )[StepsRecord.COUNT_TOTAL]
 
-        val sleepSummary = sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime, origin(it.metadata.dataOrigin.packageName)) }
+        val sleepSummary = sleep?.let { SleepSummary(it.duration, it.startedAt, it.endedAt, origin(it.sourceId)) }
         val heartRateSummary = heartRate?.samples?.maxByOrNull { it.time }
             ?.let { HeartRateSummary(it.beatsPerMinute, it.time, origin(heartRate.metadata.dataOrigin.packageName)) }
+        val restingHeartRateSummary = restingHeartRate?.let {
+            RestingHeartRateSummary(it.beatsPerMinute, it.time, origin(it.metadata.dataOrigin.packageName))
+        }
+        val sleepingHeartSamples = sleep?.let { interval ->
+            heartRateRecords.flatMap { it.samples }.filter { it.time >= interval.startedAt && it.time <= interval.endedAt }
+        }.orEmpty()
+        val sleepingHeartRateSummary = sleepingHeartSamples.takeIf { it.size >= MINIMUM_SLEEPING_HEART_RATE_SAMPLES }?.let { samples ->
+            SleepingHeartRateSummary(samples.map { it.beatsPerMinute }.average(), samples.size, sleep!!.endedAt)
+        }
         val hrvSummary = hrv?.let { HrvSummary(it.heartRateVariabilityMillis, it.time, origin(it.metadata.dataOrigin.packageName)) }
         val respiratorySummary = respiratoryRate?.let { RespiratoryRateSummary(it.rate, it.time, origin(it.metadata.dataOrigin.packageName)) }
         val activitySummary = latestActivity?.let {
@@ -97,17 +122,19 @@ class HealthDashboardRepository(private val context: Context) {
             )
         }
         val stepsSummary = stepsTotal?.let { DailyStepsSummary(it, startOfToday, now) }
-        val trend = buildSevenDayTrend(sleepRecords, heartRateRecords)
+        val trend = buildSevenDayTrend(sleepRecords, heartRateRecords, hrvRecords, restingHeartRateRecords)
         return HealthLoadResult.Success(
             HealthDashboardData(
                 sleepSummary,
                 heartRateSummary,
+                restingHeartRateSummary,
+                sleepingHeartRateSummary,
                 hrvSummary,
                 respiratorySummary,
                 activitySummary,
                 stepsSummary,
                 trend,
-                facts = buildFacts(sleepSummary, heartRateSummary, hrvSummary, respiratorySummary, activitySummary, stepsSummary, now),
+                facts = buildFacts(sleepSummary, heartRateSummary, restingHeartRateSummary, sleepingHeartRateSummary, hrvSummary, respiratorySummary, activitySummary, stepsSummary, now),
                 syncedAt = now,
             ),
         )
@@ -116,6 +143,8 @@ class HealthDashboardRepository(private val context: Context) {
     private fun buildFacts(
         sleep: SleepSummary?,
         heartRate: HeartRateSummary?,
+        restingHeartRate: RestingHeartRateSummary?,
+        sleepingHeartRate: SleepingHeartRateSummary?,
         hrv: HrvSummary?,
         respiratoryRate: RespiratoryRateSummary?,
         activity: ActivitySummary?,
@@ -127,6 +156,12 @@ class HealthDashboardRepository(private val context: Context) {
         }
         heartRate?.let {
             add(HeartRateFact(it.beatsPerMinute, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(24).toMillis().milliseconds)))
+        }
+        restingHeartRate?.let {
+            add(RestingHeartRateFact(it.beatsPerMinute, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
+        }
+        sleepingHeartRate?.let {
+            add(SleepingHeartRateFact(it.beatsPerMinute, it.sampleCount, it.measuredUntil.toSharedInstant(), HealthSource("wholemate_derived_sleeping_hr"), assessFreshness(it.measuredUntil.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
         }
         hrv?.let {
             add(HrvFact(it.rmssdMillis, it.measuredAt.toSharedInstant(), source(it.origin), assessFreshness(it.measuredAt.toSharedInstant(), assessedAt.toSharedInstant(), Duration.ofHours(36).toMillis().milliseconds)))
@@ -151,20 +186,38 @@ class HealthDashboardRepository(private val context: Context) {
     private fun buildSevenDayTrend(
         sleepRecords: List<SleepSessionRecord>,
         heartRateRecords: List<HeartRateRecord>,
+        hrvRecords: List<HeartRateVariabilityRmssdRecord>,
+        restingHeartRateRecords: List<RestingHeartRateRecord>,
     ): List<DailyHealthPoint> {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
-        val sleepByDate = sleepRecords.groupBy { it.endTime.atZone(zone).toLocalDate() }
-        val heartSamplesByDate = heartRateRecords.flatMap { it.samples }
-            .groupBy { it.time.atZone(zone).toLocalDate() }
+        val sleepIntervals = sleepRecords.map {
+            SleepInterval(it.startTime, it.endTime, it.metadata.dataOrigin.packageName)
+        }
+        val allHeartSamples = heartRateRecords.flatMap { it.samples }
+        val heartSamplesByDate = allHeartSamples.groupBy { it.time.atZone(zone).toLocalDate() }
+        val hrvByDate = hrvRecords.groupBy { it.time.atZone(zone).toLocalDate() }
+        val restingHeartRateByDate = restingHeartRateRecords.groupBy { it.time.atZone(zone).toLocalDate() }
         return (6 downTo 0).map { offset ->
             val date = today.minusDays(offset.toLong())
-            val sleepMinutes = sleepByDate[date]?.sumOf { Duration.between(it.startTime, it.endTime).toMinutes() }
+            val sleepMinutes = SleepAggregation.longestForWakeDate(
+                intervals = sleepIntervals,
+                wakeDate = date,
+                zoneId = zone,
+            )?.duration?.toMinutes()
+            val sleepInterval = SleepAggregation.longestForWakeDate(sleepIntervals, date, zone)
+            val sleepingHeartSamples = sleepInterval?.let { interval ->
+                allHeartSamples.filter { it.time >= interval.startedAt && it.time <= interval.endedAt }
+            }.orEmpty()
             val heartSamples = heartSamplesByDate[date].orEmpty()
             DailyHealthPoint(
                 date = KotlinLocalDate(date.year, date.monthValue, date.dayOfMonth),
                 sleepHours = sleepMinutes?.div(60.0),
                 averageHeartRate = heartSamples.takeIf { it.isNotEmpty() }?.map { it.beatsPerMinute.toDouble() }?.average(),
+                hrvRmssdMillis = hrvByDate[date]?.maxByOrNull { it.time }?.heartRateVariabilityMillis,
+                restingHeartRateBpm = restingHeartRateByDate[date]?.maxByOrNull { it.time }?.beatsPerMinute?.toDouble(),
+                sleepingHeartRateBpm = sleepingHeartSamples.takeIf { it.size >= MINIMUM_SLEEPING_HEART_RATE_SAMPLES }
+                    ?.map { it.beatsPerMinute }?.average(),
             )
         }
     }

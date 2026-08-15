@@ -71,6 +71,13 @@ import com.runmate.compose.health.BodyPictureSignalId
 import com.runmate.compose.health.SignalAvailability
 import com.runmate.compose.health.BaselineResult
 import com.runmate.compose.health.PersonalBaseline
+import com.runmate.compose.health.BaselineDirection
+import com.runmate.compose.health.NextAction
+import com.runmate.compose.health.NextActionPolicy
+import com.runmate.compose.health.ShapingFact
+import com.runmate.compose.health.ShapingFactRanker
+import com.runmate.compose.health.ShapingSignal
+import com.runmate.compose.health.ShapingStrength
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -184,8 +191,8 @@ private fun HealthStatusHero(
     val title: String
     val detail: String
     val ready = data != null
-    val selectedSignals = bodyPicture?.signals.orEmpty().filter { it.value != null }
-    val availableRecords = data.availableRecordCount()
+    val bodySignals = bodyPicture?.signals.orEmpty()
+    val availableSignals = bodySignals.filter { it.state == SignalAvailability.AVAILABLE }
     when (state) {
         is HealthDashboardUiState.Loading -> {
             title = if (ready) "Today's picture is updating" else "Reading today's signals"
@@ -204,16 +211,12 @@ private fun HealthStatusHero(
             detail = if (ready) "Refresh failed; no newer conclusion is shown." else state.message
         }
         is HealthDashboardUiState.Content -> {
-            title = when (selectedSignals.size) {
+            title = when (availableSignals.size) {
                 0 -> "Not enough evidence for today's picture"
-                1 -> "${selectedSignals.first().label} is available today"
+                1 -> "${availableSignals.first().label} is available today"
                 else -> "Your body picture is ready"
             }
-            detail = when {
-                selectedSignals.isEmpty() && availableRecords > 0 -> "$availableRecords measured records loaded; none are selected for the Body Picture yet."
-                selectedSignals.isEmpty() -> "No measured signal is available for the Body Picture."
-                else -> "${selectedSignals.size} selected ${if (selectedSignals.size == 1) "signal" else "signals"} shown from $availableRecords available measured records."
-            }
+            detail = ""
         }
     }
 
@@ -239,10 +242,11 @@ private fun HealthStatusHero(
                     Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
                 }
             }
-            Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
+            if (detail.isNotBlank()) {
+                Text(detail, color = Color.White.copy(.76f), fontSize = 13.sp, lineHeight = 19.sp)
+            }
             if (data != null) {
-                if (selectedSignals.isNotEmpty()) BodySnapshotRow(selectedSignals)
-                Text("Measured and calculated facts only • no AI interpretation", color = Color.White.copy(.58f), fontSize = 9.sp)
+                if (bodySignals.isNotEmpty()) BodySnapshotRow(bodySignals)
             }
         }
     }
@@ -255,7 +259,7 @@ private fun BodySnapshotRow(signals: List<BodyPictureSignal>) {
             SnapshotRing(
                 label = signal.label.uppercase(Locale.ENGLISH),
                 value = signal.displayValue(),
-                context = signal.contextLabel(),
+                progress = signal.ringProgress(),
                 color = signalColor(signal.id),
                 modifier = Modifier.weight(1f),
             )
@@ -270,25 +274,28 @@ private fun TodayShapingCard(
     bodyPicture: BodyPictureModel?,
     onOpenHealth: () -> Unit,
 ) = SurfaceCard {
-    val signals = bodyPicture?.signals.orEmpty().filter { it.value != null }
+    val signals = bodyPicture?.signals.orEmpty().filter { it.state == SignalAvailability.AVAILABLE }
+    val shapingFacts = data?.let { ShapingFactRanker.rank(it.facts, it.sevenDayTrend) }.orEmpty()
     Text("WHAT IS SHAPING TODAY", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
     val title = when {
         signals.isEmpty() -> "No shaping factor can be identified yet"
-        state is HealthDashboardUiState.Error -> "${signals.first().label} was the clearest selected signal"
-        state is HealthDashboardUiState.Loading -> "${signals.first().label} is the clearest signal in the picture being refreshed"
-        else -> "${signals.first().label} is the clearest selected signal today"
+        shapingFacts.isNotEmpty() -> shapingFacts.first().displayText()
+        state is HealthDashboardUiState.Error -> "The last known evidence is still visible"
+        state is HealthDashboardUiState.Loading -> "The last known evidence is being refreshed"
+        else -> "Not enough baseline evidence to explain the estimate yet"
     }
     val detail = when {
         signals.isEmpty() && data.availableRecordCount() > 0 -> "Measured records exist, but the current policy has not selected enough evidence for an explanation."
         signals.isEmpty() -> "Missing evidence stays missing; no cause or pattern is inferred."
-        signals.size == 1 -> "Other selected body signals do not have enough data, so no Recovery or Strain conclusion is made."
-        else -> "Only selected measured evidence is used here; no AI interpretation is added."
+        shapingFacts.size > 1 -> shapingFacts[1].displayText()
+        shapingFacts.size == 1 -> "No other strong or baseline-ready change stands out today."
+        else -> "WholeMate will not infer a reason without current evidence and a personal baseline."
     }
     Text(title, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))
     Text(detail, color = Muted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 6.dp))
     if (signals.isNotEmpty()) {
         Button(onClick = onOpenHealth, modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 4.dp)) {
-            Text("Review ${signals.first().label.lowercase(Locale.ENGLISH)} evidence")
+            Text("View why")
         }
     }
 }
@@ -302,16 +309,21 @@ private fun TodayNextCard(
     onRefresh: () -> Unit,
     onPermission: () -> Unit,
 ) = SurfaceCard {
-    val signals = bodyPicture?.signals.orEmpty().filter { it.value != null }
+    val signals = bodyPicture?.signals.orEmpty().filter { it.state == SignalAvailability.AVAILABLE }
+    val shapingFacts = data?.let { ShapingFactRanker.rank(it.facts, it.sevenDayTrend) }.orEmpty()
+    val policyAction = NextActionPolicy.select(
+        shapingFacts = shapingFacts,
+        bodyPicture = bodyPicture,
+        healthAccessIncomplete = state is HealthDashboardUiState.PermissionRequired,
+    )
     Text("WHAT NEXT", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
     val instruction = when {
-        state is HealthDashboardUiState.PermissionRequired -> "Allow health access before WholeMate draws a daily conclusion."
+        policyAction == NextAction.COMPLETE_HEALTH_ACCESS -> "Complete health access so WholeMate can read the required evidence."
         state is HealthDashboardUiState.Error -> "Retry refresh before using this picture for a new decision."
-        state is HealthDashboardUiState.Loading -> "Wait for refresh to finish; keep using only the last available picture."
+        state is HealthDashboardUiState.Loading || policyAction == NextAction.REFRESH_TODAY -> "Refresh today's data while keeping the last known evidence visible."
         state == HealthDashboardUiState.Unavailable -> "Check Health Connect availability on this device."
-        signals.isEmpty() && data.availableRecordCount() > 0 -> "Open Health to review the available records and their data quality."
-        signals.isEmpty() -> "Open Health and review data access before drawing a conclusion."
-        else -> "Review the selected evidence in Health before making today's decision."
+        policyAction == NextAction.REVIEW_DETAILS -> "Review the evidence behind today's strongest change."
+        else -> "Keep your usual plan and check back when new evidence arrives."
     }
     Text(instruction, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp, modifier = Modifier.padding(top = 8.dp))
     val actionLabel: String
@@ -319,29 +331,39 @@ private fun TodayNextCard(
     when {
         state is HealthDashboardUiState.PermissionRequired -> { actionLabel = "Allow health access"; action = onPermission }
         state is HealthDashboardUiState.Error || state == HealthDashboardUiState.Unavailable -> { actionLabel = "Try again"; action = onRefresh }
-        state !is HealthDashboardUiState.Loading -> { actionLabel = "Open Health"; action = onOpenHealth }
+        state !is HealthDashboardUiState.Loading -> { actionLabel = "See health trends"; action = onOpenHealth }
         else -> return@SurfaceCard
     }
     Button(onClick = action, modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 4.dp)) { Text(actionLabel) }
 }
 
 private fun HealthDashboardData?.availableRecordCount(): Int = this?.let {
-    listOf(it.sleep, it.heartRate, it.hrv, it.respiratoryRate, it.latestActivity, it.stepsToday).count { record -> record != null }
+    listOf(it.sleep, it.heartRate, it.restingHeartRate, it.hrv, it.respiratoryRate, it.latestActivity, it.stepsToday).count { record -> record != null }
 } ?: 0
+
+private fun ShapingFact.displayText(): String = when (signal) {
+    ShapingSignal.SLEEPING_HEART_RATE -> when (direction) {
+        BaselineDirection.CLOSE -> "Sleeping HR was close to your recent baseline."
+        BaselineDirection.ABOVE -> "Sleeping HR was ${"%.1f".format(Locale.ENGLISH, kotlin.math.abs(deviationPercent))}% above your recent baseline."
+        BaselineDirection.BELOW -> "Sleeping HR was ${"%.1f".format(Locale.ENGLISH, kotlin.math.abs(deviationPercent))}% below your recent baseline."
+    }
+    ShapingSignal.SLEEP_DURATION -> when (strength) {
+        ShapingStrength.NEUTRAL -> "Sleep duration was close to your usual."
+        ShapingStrength.STRONG -> {
+            val minutes = kotlin.math.round(kotlin.math.abs(current - baseline) * 60.0).toInt()
+            val directionText = if (direction == BaselineDirection.ABOVE) "longer" else "shorter"
+            "Sleep duration was $minutes min $directionText than your recent baseline."
+        }
+    }
+}
 
 private fun BodyPictureSignal.displayValue(): String = value?.let { "$it${unit.orEmpty()}" } ?: "--"
 
-private fun BodyPictureSignal.contextLabel(): String = when (state) {
-    SignalAvailability.AVAILABLE -> baselineDelta?.let {
-        val delta = it.difference
-        "${if (delta > 0) "+" else ""}${"%.1f".format(delta)}${it.unit} VS BASE"
-    } ?: "NO BASELINE"
-    SignalAvailability.MISSING -> "NO DATA"
-    SignalAvailability.NOT_PERMITTED -> "NOT PERMITTED"
-    SignalAvailability.NOT_SUPPORTED -> "NOT SUPPORTED"
-    SignalAvailability.NOT_CONNECTED -> "NOT CONNECTED"
-    SignalAvailability.STALE -> "STALE"
-    SignalAvailability.INSUFFICIENT_DATA -> "INSUFFICIENT DATA"
+private fun BodyPictureSignal.ringProgress(): Float? = when {
+    state != SignalAvailability.AVAILABLE -> null
+    id == BodyPictureSignalId.RECOVERY -> value?.toFloatOrNull()?.div(100f)?.coerceIn(0f, 1f)
+    id == BodyPictureSignalId.SLEEP -> 1f
+    else -> null
 }
 
 private fun signalColor(id: BodyPictureSignalId): Color = when (id) {
@@ -353,19 +375,18 @@ private fun signalColor(id: BodyPictureSignalId): Color = when (id) {
 }
 
 @Composable
-private fun SnapshotRing(label: String, value: String, context: String, color: Color, modifier: Modifier = Modifier) {
+private fun SnapshotRing(label: String, value: String, progress: Float?, color: Color, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(86.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 drawCircle(Color.White.copy(.12f), style = Stroke(width = 13f))
-                if (value != "--") drawArc(color, -90f, 300f, false, style = Stroke(width = 13f, cap = StrokeCap.Round))
+                progress?.let { drawArc(color, -90f, 300f * it.coerceIn(0f, 1f), false, style = Stroke(width = 13f, cap = StrokeCap.Round)) }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(value, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black, maxLines = 1)
                 Text(label, color = Color.White.copy(.62f), fontSize = 7.sp, fontWeight = FontWeight.ExtraBold)
             }
         }
-        Text(context, color = Color.White.copy(.6f), fontSize = 7.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.padding(top = 6.dp))
     }
 }
 

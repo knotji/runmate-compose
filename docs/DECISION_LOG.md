@@ -16,9 +16,11 @@ WholeMate helps a person understand how they are today, what is shaping that sta
 
 The current repository is still physically an Android application module; CMP source-set migration is incremental and must be reported honestly.
 
-## 2026-08-15 - Body Picture is adaptive
+## 2026-08-15 - Body Picture keeps three stable v1 rings
 
-The familiar three-ring hero remains an approved initial presentation, currently `Recovery / Strain / Sleep`. Those labels are not permanent WholeMate ontology. The Body Picture selects three or four useful signals from available evidence and the person's goals through typed presentation models.
+The familiar three-ring hero is the approved v1 presentation in stable order: `Recovery / Strain / Sleep`. The rings share layout, not scale: Recovery is a versioned percentage estimate, Sleep is measured duration, and Strain is unavailable until a model contract defines it. Missing values remain `--`; no placeholder score is calculated to fill a position. These labels do not become permanent WholeMate ontology outside this v1 presentation policy.
+
+`ShapingFactRanker` and `NextActionPolicy` are separate deterministic policies. The former ranks baseline evidence; the latter maps evidence/access/freshness to bounded actions. A Recovery number never directly becomes an unapproved recommendation.
 
 ## 2026-08-15 - AI is optional to comprehension
 

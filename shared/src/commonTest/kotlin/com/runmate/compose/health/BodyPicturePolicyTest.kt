@@ -19,11 +19,11 @@ class BodyPicturePolicyTest {
         val model = InitialBodyPicturePolicy().select(input(sleep(sourceA)))
         assertEquals(DataCompleteness.PARTIAL, model.completeness)
         assertEquals(
-            listOf(SignalAvailability.NOT_CONNECTED, SignalAvailability.NOT_CONNECTED, SignalAvailability.AVAILABLE),
+            listOf(SignalAvailability.INSUFFICIENT_DATA, SignalAvailability.INSUFFICIENT_DATA, SignalAvailability.AVAILABLE),
             model.signals.map(BodyPictureSignal::state),
         )
-        assertEquals(EvidenceClass.MEASURED, model.signals.last().evidenceClass)
-        assertEquals("provider_a", model.signals.last().source?.provider)
+        assertEquals(EvidenceClass.MEASURED, model.signals[2].evidenceClass)
+        assertEquals("provider_a", model.signals[2].source?.provider)
     }
 
     @Test fun missingSleepIsExplicitAndNeverReceivesFallbackValue() {
@@ -36,8 +36,8 @@ class BodyPicturePolicyTest {
     }
 
     @Test fun providerIdentityDoesNotChangeSignalSemantics() {
-        val first = InitialBodyPicturePolicy().select(input(sleep(sourceA))).signals.last()
-        val second = InitialBodyPicturePolicy().select(input(sleep(sourceB))).signals.last()
+        val first = InitialBodyPicturePolicy().select(input(sleep(sourceA))).signals[2]
+        val second = InitialBodyPicturePolicy().select(input(sleep(sourceB))).signals[2]
         assertEquals(first.copy(source = second.source), second)
     }
 
@@ -52,9 +52,37 @@ class BodyPicturePolicyTest {
     @Test fun oldSleepIsMissingForToday() {
         val oldEnd = now - 2.days
         val oldSleep = SleepFact(7.hours, oldEnd - 7.hours, oldEnd, sourceA, Freshness.STALE)
-        val signal = InitialBodyPicturePolicy().select(input(oldSleep)).signals.last()
+        val signal = InitialBodyPicturePolicy().select(input(oldSleep)).signals.single { it.id == BodyPictureSignalId.SLEEP }
         assertEquals(SignalAvailability.MISSING, signal.state)
         assertNull(signal.value)
+    }
+
+    @Test fun calculatedRecoveryAndStrainAreShownOnlyFromTypedFacts() {
+        val calculatedSource = HealthSource("wholemate_calculation")
+        val model = InitialBodyPicturePolicy().select(
+            input(
+                sleep(sourceA),
+                RecoveryScoreFact(72, now, calculatedSource, Freshness.FRESH),
+                StrainScoreFact(8.4, now, calculatedSource, Freshness.FRESH),
+            ),
+        )
+        assertEquals(DataCompleteness.COMPLETE, model.completeness)
+        assertEquals(listOf("72", "8.4", "7h 0m"), model.signals.map(BodyPictureSignal::value))
+        assertEquals(
+            listOf(EvidenceClass.CALCULATED, EvidenceClass.CALCULATED, EvidenceClass.MEASURED),
+            model.signals.map(BodyPictureSignal::evidenceClass),
+        )
+    }
+
+    @Test fun staleCalculatedScoresRemainVisibleButAreNotAvailable() {
+        val calculatedSource = HealthSource("wholemate_calculation")
+        val model = InitialBodyPicturePolicy().select(
+            input(RecoveryScoreFact(72, now - 2.days, calculatedSource, Freshness.STALE)),
+        )
+        val recovery = model.signals.single { it.id == BodyPictureSignalId.RECOVERY }
+        assertEquals(SignalAvailability.STALE, recovery.state)
+        assertEquals("72", recovery.value)
+        assertEquals(DataCompleteness.UNAVAILABLE, model.completeness)
     }
 
     @Test fun permissionStateOverridesAValue() {

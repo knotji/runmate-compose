@@ -22,6 +22,26 @@ sealed interface HealthFact {
     val evidenceClass: EvidenceClass get() = EvidenceClass.MEASURED
 }
 
+data class RecoveryScoreFact(
+    val score: Int,
+    override val observedAt: Instant,
+    override val source: HealthSource,
+    override val freshness: Freshness,
+) : HealthFact {
+    override val evidenceClass: EvidenceClass = EvidenceClass.CALCULATED
+    init { require(score in 0..100) { "Recovery score must be 0..100" } }
+}
+
+data class StrainScoreFact(
+    val score: Double,
+    override val observedAt: Instant,
+    override val source: HealthSource,
+    override val freshness: Freshness,
+) : HealthFact {
+    override val evidenceClass: EvidenceClass = EvidenceClass.CALCULATED
+    init { require(score >= 0.0 && score.isFinite()) { "Strain score must be finite and non-negative" } }
+}
+
 data class SleepFact(
     val duration: Duration,
     val start: Instant,
@@ -43,6 +63,29 @@ data class HeartRateFact(
     override val freshness: Freshness,
 ) : HealthFact {
     init { require(beatsPerMinute > 0) { "Heart rate must be positive" } }
+}
+
+data class RestingHeartRateFact(
+    val beatsPerMinute: Long,
+    override val observedAt: Instant,
+    override val source: HealthSource,
+    override val freshness: Freshness,
+) : HealthFact {
+    init { require(beatsPerMinute > 0) { "Resting heart rate must be positive" } }
+}
+
+data class SleepingHeartRateFact(
+    val beatsPerMinute: Double,
+    val sampleCount: Int,
+    override val observedAt: Instant,
+    override val source: HealthSource,
+    override val freshness: Freshness,
+) : HealthFact {
+    override val evidenceClass: EvidenceClass = EvidenceClass.CALCULATED
+    init {
+        require(beatsPerMinute > 0.0 && beatsPerMinute.isFinite()) { "Sleeping heart rate must be positive and finite" }
+        require(sampleCount > 0) { "Sleeping heart rate requires samples" }
+    }
 }
 
 data class HrvFact(

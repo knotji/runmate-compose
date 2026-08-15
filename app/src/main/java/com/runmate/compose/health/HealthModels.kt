@@ -32,6 +32,25 @@ data class HeartRateSummary(
     }
 }
 
+data class RestingHeartRateSummary(
+    val beatsPerMinute: Long,
+    val measuredAt: Instant,
+    val origin: SignalOrigin? = null,
+) {
+    init { require(beatsPerMinute > 0) { "Resting heart rate must be positive" } }
+}
+
+data class SleepingHeartRateSummary(
+    val beatsPerMinute: Double,
+    val sampleCount: Int,
+    val measuredUntil: Instant,
+) {
+    init {
+        require(beatsPerMinute > 0.0 && beatsPerMinute.isFinite()) { "Sleeping heart rate must be positive and finite" }
+        require(sampleCount > 0) { "Sleeping heart rate requires samples" }
+    }
+}
+
 data class HrvSummary(
     val rmssdMillis: Double,
     val measuredAt: Instant,

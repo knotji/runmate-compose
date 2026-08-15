@@ -55,7 +55,7 @@ A proposed capability that cannot identify its place in this loop is not ready f
 
 ## Body Picture
 
-The Today hero presents the three or four signals most useful for this person today. `Recovery / Strain / Sleep` is an approved first configuration and familiar UI pattern, not permanent product ontology.
+The Today v1 hero keeps `Recovery / Strain / Sleep` in stable positions so the user can learn the glanceable layout. Their semantics stay typed and distinct: percentage estimate, unavailable strain contract, and measured sleep duration. This is an approved first configuration and familiar UI pattern, not permanent product ontology.
 
 The selected signals may change as goals, evidence, and approved models evolve—for example `Sleep / Energy / Stress / Movement` or `Recovery / Sleep / Resting HR / Activity`. The component is reusable; its semantics come from typed presentation models and must not be hard-coded into shared product logic.
 
