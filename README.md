@@ -6,6 +6,7 @@ An isolated, greenfield Android health companion experiment, formerly the RunMat
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Product concept](docs/PRODUCT_CONCEPT.md)
+- [Personal baseline](docs/PERSONAL_BASELINE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [UI system](docs/UI_SYSTEM.md)
 - [State and loading](docs/STATE_AND_LOADING.md)

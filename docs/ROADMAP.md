@@ -57,6 +57,7 @@ Goal: make Today useful without pretending that a recovery decision exists.
 - Add Sleep, HR, HRV, respiratory, and workout detail views.
 - Improve seven-day chart accessibility, selection, and empty-day behavior.
 - Add a visible last-sync timestamp and manual refresh result.
+- [x] Add neutral Sleep and Heart Rate personal-baseline comparisons with minimum-data rules.
 
 Acceptance:
 

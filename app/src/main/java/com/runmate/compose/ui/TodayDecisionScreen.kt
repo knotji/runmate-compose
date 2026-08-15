@@ -65,6 +65,8 @@ import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
 import com.runmate.compose.health.HealthDisplayFormatter
+import com.runmate.compose.health.BaselineResult
+import com.runmate.compose.health.PersonalBaseline
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -123,6 +125,7 @@ fun TodayDecisionScreen(viewModel: HealthDashboardViewModel?) {
             }
             if (content != null) {
                 item { LatestSignalsCard(content) }
+                item { PersonalBaselineCard(content.sevenDayTrend) }
                 item { SevenDayChart(content.sevenDayTrend) }
             }
             item {
@@ -268,6 +271,39 @@ private fun SignalRow(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
             Text(label, color = Muted, fontSize = 11.sp)
             Text(value, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp)
             if (source != null) Text("Source: $source", color = Ocean, fontSize = 9.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+}
+
+@Composable
+private fun PersonalBaselineCard(points: List<DailyHealthPoint>) = SurfaceCard {
+    Text("PERSONAL BASELINE  •  CALCULATED", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
+    Text("Today vs your recent days", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+    Text("Today is compared with at least 3 available days before today.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 4.dp))
+    Spacer(Modifier.height(16.dp))
+    BaselineRow("Sleep", PersonalBaseline.sleep(points), "hours", decimals = 1)
+    Divider()
+    BaselineRow("Average heart rate", PersonalBaseline.heartRate(points), "bpm", decimals = 0)
+}
+
+@Composable
+private fun BaselineRow(label: String, result: BaselineResult, unit: String, decimals: Int) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(label, color = Muted, fontSize = 11.sp)
+        when (result) {
+            is BaselineResult.Available -> {
+                val comparison = result.comparison
+                val sign = if (comparison.difference > 0) "+" else ""
+                val delta = if (decimals == 0) comparison.difference.toInt().toString() else "%.1f".format(comparison.difference)
+                val baseline = if (decimals == 0) comparison.baselineAverage.toInt().toString() else "%.1f".format(comparison.baselineAverage)
+                Text("$sign$delta $unit vs baseline", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Baseline $baseline $unit from ${comparison.baselineSampleCount} previous days", color = Muted, fontSize = 10.sp)
+            }
+            is BaselineResult.InsufficientData -> {
+                val reason = if (!result.currentAvailable) "No measured value for today" else "${result.baselineSampleCount}/${result.requiredBaselineSamples} baseline days available"
+                Text("Not enough data", color = Ink, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                Text(reason, color = Muted, fontSize = 10.sp)
+            }
         }
     }
 }
