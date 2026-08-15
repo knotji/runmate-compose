@@ -6,7 +6,7 @@ This file is the implementation contract for visual work. A screen change is inc
 
 - Today stays glanceable: one adaptive Body Picture and no long diagnostic list.
 - Health follows Overview, Trends, Body, and Data Sources.
-- Move follows Tools, measured activity, and later daily records.
+- Move follows Today movement, Recent activities, Pattern, and then approved Tools. Tools never lead the hierarchy merely because a capability exists.
 - You follows Current focus, Context, and Your controls. It must not become a settings dump or social profile.
 - Interpretation/action belongs contextually to Today; a future conversation surface is not a default primary tab.
 - A card must say `MEASURED`, `CONNECTED`, `NOT CONNECTED`, `PLANNED`, or `DISABLED`; unavailable capabilities never receive preview values.

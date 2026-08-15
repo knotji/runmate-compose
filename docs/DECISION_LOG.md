@@ -30,7 +30,7 @@ Deterministic facts, provenance, freshness, baselines, and missingness must rema
 
 ## 2026-08-15 - RunMate UX baseline with health-first hierarchy
 
-Use `runmate-mobile` as an approved visual and interaction baseline. Reimplement behavior rather than copying Ionic/CSS/state code. Today, Health, Move, and Coach retain their navigation, with Coach defined as the interpretation/action layer rather than only chat.
+**Superseded by `IA v1 uses Today, Health, Move, and You` above.** Historical decision: use `runmate-mobile` as an approved visual and interaction baseline and reimplement behavior rather than copying Ionic/CSS/state code. Its former Today, Health, Move, and Coach navigation is not the current IA; coaching now belongs contextually to the product rather than a top-level destination.
 
 ## 2026-08-15 - WholeMate working product name
 

@@ -8,9 +8,11 @@ Today is intentionally short: date, evidence-status badge, one Body Picture hero
 
 ## Information order
 
-1. At-a-glance Body Picture: up to three or four useful signals selected from available evidence and active goals. The UI renders only signals with approved evidence; Recovery and Strain do not receive reserved positions while unavailable.
-2. Health Connect permission and refresh action when attention is required.
-3. A clear route to Health for records, baselines, and trends.
+1. **Body Picture — How am I today?** Up to three or four useful signals selected from available evidence and active goals. The UI renders only signals with approved evidence; Recovery and Strain do not receive reserved positions while unavailable.
+2. **What is shaping today — Why?** The smallest deterministic explanation supported by the available evidence, with a contextual route to evidence detail in Health.
+3. **What next — What can I do?** One deterministic action, an access/refresh resolution, or an honest statement that there is not enough evidence.
+
+This semantic skeleton remains present in Ready, Partial, Missing, Loading, and Error. Permission, refresh, and provider resolution appear inside the relevant block; they do not replace the whole daily story or become a second information hierarchy.
 
 ## At-a-glance body picture
 
