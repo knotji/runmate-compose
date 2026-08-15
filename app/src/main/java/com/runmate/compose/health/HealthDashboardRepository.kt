@@ -14,11 +14,10 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 data class HealthDashboardData(
-    val sleep: String,
-    val heartRate: String,
+    val sleep: SleepSummary?,
+    val heartRate: HeartRateSummary?,
     val hrv: String,
     val respiratoryRate: String,
     val workout: String,
@@ -73,11 +72,11 @@ class HealthDashboardRepository(private val context: Context) {
 
         return HealthLoadResult.Success(
             HealthDashboardData(
-                sleep?.let(::formatSleep) ?: "No sleep data in the last 30 days",
-                heartRate?.let(::formatHeartRate) ?: "No heart-rate data in the last 30 days",
-                hrv?.let { "%.1f ms • %s".format(it.heartRateVariabilityMillis, formatTime(it.time)) }
+                sleep?.let { SleepSummary(Duration.between(it.startTime, it.endTime), it.startTime, it.endTime) },
+                heartRate?.samples?.maxByOrNull { it.time }?.let { HeartRateSummary(it.beatsPerMinute, it.time) },
+                hrv?.let { "%.1f ms • %s".format(it.heartRateVariabilityMillis, HealthDisplayFormatter.time(it.time)) }
                     ?: "No HRV data in the last 30 days",
-                respiratoryRate?.let { "%.1f breaths/min • %s".format(it.rate, formatTime(it.time)) }
+                respiratoryRate?.let { "%.1f breaths/min • %s".format(it.rate, HealthDisplayFormatter.time(it.time)) }
                     ?: "No respiratory-rate data in the last 30 days",
                 workout?.let(::formatWorkout) ?: "No workout data in the last 30 days",
                 buildSevenDayTrend(sleepRecords, heartRateRecords),
@@ -106,22 +105,9 @@ class HealthDashboardRepository(private val context: Context) {
         }
     }
 
-    private fun formatSleep(record: SleepSessionRecord): String {
-        val minutes = Duration.between(record.startTime, record.endTime).toMinutes()
-        return "${minutes / 60}h ${minutes % 60}m • ended ${formatTime(record.endTime)}"
-    }
-
-    private fun formatHeartRate(record: HeartRateRecord): String =
-        record.samples.maxByOrNull { it.time }
-            ?.let { "${it.beatsPerMinute} bpm • ${formatTime(it.time)}" }
-            ?: "Heart-rate record has no samples"
-
     private fun formatWorkout(record: ExerciseSessionRecord): String {
         val minutes = Duration.between(record.startTime, record.endTime).toMinutes()
         val title = record.title?.takeIf(String::isNotBlank) ?: "Exercise type ${record.exerciseType}"
-        return "$title • ${minutes}m • ${formatTime(record.endTime)}"
+        return "$title • ${minutes}m • ${HealthDisplayFormatter.time(record.endTime)}"
     }
-
-    private fun formatTime(instant: Instant): String = DateTimeFormatter.ofPattern("d MMM, HH:mm")
-        .withZone(ZoneId.systemDefault()).format(instant)
 }

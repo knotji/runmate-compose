@@ -4,6 +4,16 @@
 
 RunMate Compose is an isolated Android-first client experiment. It may read production-compatible data, but it must not silently become a second recovery engine or introduce production persistence.
 
+## Product axis: health first
+
+The application is organized around understanding personal health over time. Running is an activity signal inside that system, not the root navigation or the default explanation for every metric.
+
+- Today summarizes measured health availability and freshness.
+- Health owns sleep, cardiovascular, respiratory, recovery-source, and trend capabilities.
+- Activities may include running, walking, cycling, strength, and other Health Connect exercise types.
+- A future recommendation must be derived from approved health and activity contracts; the UI must not assume the user is a runner.
+- Navigation and naming should remain useful on a day with no run or workout.
+
 ## Greenfield implementation boundary
 
 `runmate-compose` is not a source-code port of `runmate-mobile`. Capabilities are designed and implemented incrementally inside this repository.

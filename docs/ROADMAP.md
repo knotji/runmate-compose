@@ -4,6 +4,8 @@
 
 This roadmap turns the Compose Lab into a sequence of reversible product experiments. Completion means the acceptance criteria are demonstrated on the target Samsung device; a successful build alone is not enough.
 
+The product direction is health-first. Running remains supported as one activity type, while the system, navigation, and Today experience are built around broader health signals.
+
 ## Product principles
 
 - Show measured health records only. Missing data stays missing.
@@ -23,12 +25,14 @@ This roadmap turns the Compose Lab into a sequence of reversible product experim
 - [x] Mock Recovery, Strain, Energy, training guidance, insights, and charts removed from Today.
 - [x] Firebase App Distribution flow and Samsung tester established.
 - [ ] Physical-device acceptance pass recorded for the real-data Today screen.
+- [x] Sleep and Heart Rate use typed domain models; display formatting is outside the repository.
 
 ## Milestone 1 - Typed health domain
 
 Goal: stop treating health measurements as display strings.
 
-- Introduce typed Sleep, HeartRate, HRV, RespiratoryRate, and Workout models.
+- [x] Introduce typed Sleep and Heart Rate models.
+- [ ] Introduce typed HRV, Respiratory Rate, and Workout models.
 - Preserve record identifiers, source metadata, start/end time, zone, and last-synced time where available.
 - Format values only in the UI mapper.
 - Represent a successful query with no record separately from a failed query.

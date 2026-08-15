@@ -60,6 +60,7 @@ import com.runmate.compose.health.DailyHealthPoint
 import com.runmate.compose.health.HealthDashboardData
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
+import com.runmate.compose.health.HealthDisplayFormatter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -206,9 +207,9 @@ private fun LatestSignalsCard(data: HealthDashboardData) = SurfaceCard {
     Text("LATEST RECORDS", color = Ocean, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = .8.sp)
     Text("Direct from Health Connect", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
     Spacer(Modifier.height(14.dp))
-    SignalRow(Icons.Rounded.Bedtime, "Sleep", data.sleep)
+    SignalRow(Icons.Rounded.Bedtime, "Sleep", HealthDisplayFormatter.sleep(data.sleep))
     Divider()
-    SignalRow(Icons.Rounded.Favorite, "Heart rate", data.heartRate)
+    SignalRow(Icons.Rounded.Favorite, "Heart rate", HealthDisplayFormatter.heartRate(data.heartRate))
     Divider()
     SignalRow(Icons.Rounded.MonitorHeart, "HRV", data.hrv)
     Divider()

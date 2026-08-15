@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-08-15 - Health-first product axis
+
+Compose is designed as a personal health application rather than a running application with health cards. Running remains an activity type. Today, navigation, data ownership, and future recommendations must make sense across sleep, cardiovascular, respiratory, recovery, and multiple activity types.
+
 ## 2026-08-15 - Greenfield capability slices
 
 Do not copy or mechanically port `runmate-mobile` into this repository. Build one independently testable Compose capability at a time. The existing application may supply behavioral baselines and data-contract compatibility requirements, but not implementation structure or business-logic duplication. Approved shared brand assets are the only default exception.

@@ -64,6 +64,7 @@ import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.runmate.compose.health.HealthDashboardUiState
 import com.runmate.compose.health.HealthDashboardViewModel
+import com.runmate.compose.health.HealthDisplayFormatter
 import com.runmate.compose.state.AppDestination
 import com.runmate.compose.state.RunMateAppStore
 
@@ -317,8 +318,8 @@ private fun NativeHealthDashboard(viewModel: HealthDashboardViewModel) {
             }
             is HealthDashboardUiState.Content -> {
                 item { DarkHealthCard("Health Connect", "Connected") }
-                item { DarkHealthCard("Sleep", current.data.sleep) }
-                item { DarkHealthCard("Heart rate", current.data.heartRate) }
+                item { DarkHealthCard("Sleep", HealthDisplayFormatter.sleep(current.data.sleep)) }
+                item { DarkHealthCard("Heart rate", HealthDisplayFormatter.heartRate(current.data.heartRate)) }
                 item { DarkHealthCard("HRV (RMSSD)", current.data.hrv) }
                 item { DarkHealthCard("Respiratory rate", current.data.respiratoryRate) }
                 item { DarkHealthCard("Latest workout", current.data.workout) }
