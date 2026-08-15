@@ -1,9 +1,11 @@
 package com.runmate.compose.demo
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +57,8 @@ private val Moss = Color(0xFF276B50)
 private val MossSoft = Color(0xFFE3F0E9)
 private val AmberSoft = Color(0xFFFFF2D5)
 private val DangerSoft = Color(0xFFFBE8E4)
+private val TodayHeroStart = Color(0xFF103C3B)
+private val TodayHeroEnd = Color(0xFF276B50)
 
 private enum class LabDestination(val label: String, val marker: String) {
     TODAY("Today", "01"),
@@ -152,34 +157,146 @@ private fun TodayPage(
 ) {
     val model = state.visibleValue()
     val usefulSignals = model?.signals.orEmpty().filter { it.value != null }
-    PageHeader("TODAY - AUG 15", todayHeadline(state, model), todaySummary(state, model))
+    TodayHeader(todayHeadline(state, model), todaySummary(state, model))
 
-    SectionCard("BODY PICTURE", trailing = model?.completeness?.label()) {
-        if (model == null) {
-            LoadingLine("Building today's picture...")
-        } else if (usefulSignals.isEmpty()) {
-            Text("No measured signals are available for today's picture.", color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text("WholeMate will not fill missing evidence with scores or placeholders.", color = Muted, fontSize = 12.sp)
-        } else {
-            SignalRow(usefulSignals)
-            Text(todayEvidenceStatus(state), color = Muted, fontSize = 10.sp)
-        }
-    }
+    TodayBodyPicture(model, usefulSignals, state)
 
-    SectionCard("WHAT IS SHAPING TODAY") {
+    TodaySectionCard("WHAT IS SHAPING TODAY", badge = if (usefulSignals.isEmpty()) null else "MEASURED EVIDENCE") {
         Text(todayShapingTitle(state, usefulSignals), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-        Text(todayShapingDetail(state, usefulSignals), color = Muted, fontSize = 13.sp)
+        Text(todayShapingDetail(state, usefulSignals), color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
         if (usefulSignals.isNotEmpty()) {
-            ActionPill("Review sleep evidence", onClick = onOpenHealth)
+            TodayActionButton("Review sleep evidence", onClick = onOpenHealth)
         }
     }
 
-    SectionCard("WHAT NEXT") {
-        Text(todayNextStep(state, usefulSignals), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    TodaySectionCard("WHAT NEXT", emphasized = true) {
+        Text(todayNextStep(state, usefulSignals), color = Ink, fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)
         when {
-            state is LoadState.Failed -> ActionPill("Retry demo refresh", onClick = onRetry)
-            usefulSignals.isEmpty() -> ActionPill("Review data sources in Health", onClick = onOpenHealth)
+            state is LoadState.Failed -> TodayActionButton("Retry demo refresh", onClick = onRetry)
+            usefulSignals.isEmpty() -> TodayActionButton("Review data sources in Health", onClick = onOpenHealth)
         }
+    }
+}
+
+@Composable
+private fun TodayHeader(title: String, summary: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("TODAY - AUG 15", color = Moss, fontSize = 10.sp, fontWeight = FontWeight.Black)
+            Spacer(Modifier.weight(1f))
+            Text("DEMO", color = Muted, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        }
+        Text(title, color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Black, lineHeight = 34.sp)
+        Text(summary, color = Muted, fontSize = 14.sp, lineHeight = 20.sp)
+    }
+}
+
+@Composable
+private fun TodayBodyPicture(
+    model: BodyPictureModel?,
+    usefulSignals: List<BodyPictureSignal>,
+    state: LoadState<BodyPictureModel>,
+) {
+    Card(shape = RoundedCornerShape(30.dp), colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
+        Column(
+            Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(TodayHeroStart, TodayHeroEnd))).padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("BODY PICTURE", color = Color.White.copy(alpha = .72f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Text("A glance at today's evidence", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                }
+                model?.completeness?.label()?.let { TodayStatusBadge(it) }
+            }
+            when {
+                model == null -> LoadingLineOnDark("Building today's picture...")
+                usefulSignals.isEmpty() -> {
+                    Text("No measured signals available", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Missing evidence stays missing. No score is filled in.", color = Color.White.copy(alpha = .72f), fontSize = 12.sp)
+                }
+                else -> TodaySignalRow(usefulSignals)
+            }
+            Text(todayEvidenceStatus(state), color = Color.White.copy(alpha = .68f), fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+private fun TodayStatusBadge(label: String) {
+    Text(
+        label,
+        color = Color.White,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.border(1.dp, Color.White.copy(alpha = .34f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
+private fun TodaySignalRow(signals: List<BodyPictureSignal>) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val circleSize = if (maxWidth < 330.dp) 78.dp else 96.dp
+        val valueSize = if (maxWidth < 330.dp) 17.sp else 21.sp
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            signals.take(3).forEach { signal ->
+                Column(
+                    Modifier.size(circleSize).background(Color.White.copy(alpha = .11f), CircleShape).border(1.dp, Color.White.copy(alpha = .18f), CircleShape),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(signal.value.orEmpty(), color = Color.White, fontSize = valueSize, fontWeight = FontWeight.Black, maxLines = 1)
+                    signal.unit?.takeIf { it.isNotBlank() }?.let {
+                        Text(it, color = Color.White.copy(alpha = .72f), fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(signal.label.uppercase(), color = Color.White.copy(alpha = .7f), fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodaySectionCard(
+    title: String,
+    badge: String? = null,
+    emphasized: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = if (emphasized) MossSoft else SurfaceColor),
+        elevation = CardDefaults.cardElevation(0.dp),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                Spacer(Modifier.weight(1f))
+                badge?.let { Text(it, color = Moss, fontSize = 9.sp, fontWeight = FontWeight.Black) }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun TodayActionButton(label: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(48.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MossSoft, contentColor = Moss),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+    ) {
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun LoadingLineOnDark(label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+        Text(label, color = Color.White.copy(alpha = .78f), fontSize = 13.sp)
     }
 }
 

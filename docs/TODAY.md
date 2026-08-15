@@ -8,7 +8,7 @@ Today is intentionally short: date, evidence-status badge, one Body Picture hero
 
 ## Information order
 
-1. At-a-glance Body Picture: three or four useful signals selected from available evidence and active goals. The first configuration remains Recovery, Strain, and Sleep; it is not permanent product ontology. Sleep may use a measured provider value, while Recovery and Strain remain visibly unavailable until approved shared results exist.
+1. At-a-glance Body Picture: up to three or four useful signals selected from available evidence and active goals. The UI renders only signals with approved evidence; Recovery and Strain do not receive reserved positions while unavailable.
 2. Health Connect permission and refresh action when attention is required.
 3. A clear route to Health for records, baselines, and trends.
 
@@ -18,7 +18,7 @@ Today is intentionally short: date, evidence-status badge, one Body Picture hero
 - Signal models carry label, value, evidence class, freshness, availability, and action target; the UI must not hard-code product meaning to a fixed ring position.
 - A current-day signal never silently substitutes an older latest value.
 - Baseline deltas remain neutral numeric differences and are marked `VS BASE`.
-- The initial rings preserve the established RunMate mental model. An unavailable Recovery or Strain ring shows `--` and `NOT CONNECTED`; WholeMate never derives either score locally without an approved versioned model.
+- Metric circles are adaptive presentation, not fixed Recovery/Strain/Sleep positions. Unavailable Recovery or Strain is omitted from the glanceable picture; WholeMate never derives either score locally without an approved versioned model.
 - Missing current or baseline values use `--` or `NO BASELINE` rather than fallback numbers.
 - Deterministic facts remain comprehensible when AI interpretation is unavailable.
 
